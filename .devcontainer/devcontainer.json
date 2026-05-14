@@ -1,0 +1,48 @@
+{
+  "name": "Portfolio Stack",
+  "dockerComposeFile": ["../docker-compose.yml"],
+  "service": "backend",
+  "workspaceFolder": "/app",
+  "shutdownAction": "stopCompose",
+  "forwardPorts": [3000, 3001, 27017],
+  "portsAttributes": {
+    "3000": { "label": "Admin (Next.js)",  "onAutoForward": "openPreview" },
+    "3001": { "label": "API (NestJS)",     "onAutoForward": "notify" },
+    "27017": { "label": "MongoDB",         "onAutoForward": "silent" }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "Prisma.prisma",
+        "mongodb.mongodb-vscode",
+        "ms-azuretools.vscode-docker",
+        "firsttris.vscode-jest-runner",
+        "PKief.material-icon-theme",
+        "yzhang.markdown-all-in-one"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
+        },
+        "tailwindCSS.includeLanguages": {
+          "typescript":     "javascript",
+          "typescriptreact": "javascript"
+        },
+        "files.exclude": {
+          "**/node_modules":  true,
+          "**/.next":         true,
+          "**/dist":          true
+        },
+        "workbench.iconTheme": "material-icon-theme",
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+  "postCreateCommand": "echo 'Stack ready. Open http://localhost:3000 (admin) or http://localhost:3001/api/docs (API)'",
+  "remoteUser": "root"
+}

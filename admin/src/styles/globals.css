@@ -1,0 +1,121 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Font import (CDN) ─────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+  html, body {
+    background-color: #050309;
+    color: #f5efe0;
+    font-family: 'Inter', system-ui, sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    background-image:
+      radial-gradient(ellipse at top left,    rgba(255, 217, 122, 0.04) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom right, rgba(212, 193, 154, 0.03) 0%, transparent 60%);
+  }
+
+  /* Subtle starfield background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, rgba(255, 248, 232, 0.5), transparent),
+      radial-gradient(1px 1px at 60% 70%, rgba(255, 248, 232, 0.4), transparent),
+      radial-gradient(1px 1px at 80% 20%, rgba(255, 248, 232, 0.5), transparent),
+      radial-gradient(1px 1px at 30% 85%, rgba(255, 248, 232, 0.3), transparent),
+      radial-gradient(1px 1px at 90% 50%, rgba(255, 248, 232, 0.4), transparent);
+    background-size: 1200px 800px;
+    background-repeat: repeat;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.6;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: #0a0612; }
+  ::-webkit-scrollbar-thumb {
+    background: #3a2f1f; border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: #5a4a30; }
+}
+
+@layer components {
+  /* Console label, e.g. "> projects.list" */
+  .console-label {
+    @apply font-mono text-xs uppercase tracking-widest text-goldDeep;
+  }
+
+  /* Gold accent text */
+  .text-gold-accent {
+    @apply text-goldPale font-mono;
+  }
+
+  /* Container card with subtle gold border */
+  .card-gold {
+    @apply bg-surface/60 backdrop-blur-sm rounded-md border border-goldDeep/20 shadow-gold-sm;
+  }
+
+  /* Standard input */
+  .input-gold {
+    @apply w-full bg-surface2/80 border border-goldDeep/30 rounded-sm px-3 py-2.5
+           text-whiteHex font-mono text-sm placeholder-muted
+           focus:outline-none focus:border-goldGlow/60 focus:shadow-gold-sm
+           transition-colors;
+  }
+
+  /* Button — primary action */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-sm
+           bg-goldDeep text-bg font-mono text-sm font-semibold uppercase tracking-wider
+           hover:bg-goldGlow hover:shadow-gold transition-all
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Button — secondary / ghost */
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-sm
+           bg-transparent border border-goldDeep/40 text-goldPale font-mono text-sm uppercase tracking-wider
+           hover:border-goldGlow hover:text-goldGlow transition-all
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Button — destructive */
+  .btn-danger {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-sm
+           bg-transparent border border-danger/40 text-danger font-mono text-sm uppercase tracking-wider
+           hover:bg-danger/10 hover:border-danger transition-all;
+  }
+
+  /* Table styles */
+  .table-gold { @apply w-full text-sm; }
+  .table-gold th {
+    @apply px-3 py-2 text-left font-mono uppercase text-xs tracking-widest text-goldDeep
+           border-b border-goldDeep/20;
+  }
+  .table-gold tbody tr {
+    @apply border-b border-goldDeep/10 hover:bg-goldDeep/5 transition-colors;
+  }
+  .table-gold td {
+    @apply px-3 py-3 text-whiteHex/90;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-sm font-mono text-xs uppercase tracking-wider;
+  }
+  .badge-gold     { @apply bg-goldDeep/20 text-goldPale border border-goldDeep/30; }
+  .badge-success  { @apply bg-success/10  text-success  border border-success/30; }
+  .badge-danger   { @apply bg-danger/10   text-danger   border border-danger/30; }
+  .badge-muted    { @apply bg-muted/10    text-muted    border border-muted/30; }
+}

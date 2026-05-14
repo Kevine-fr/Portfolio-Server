@@ -1,0 +1,105 @@
+# Portfolio full stack — dev orchestration
+# Lance : mongo + backend NestJS (hot reload) + admin Next.js (hot reload)
+# Usage :
+#   docker compose up -d
+#   docker compose logs -f backend admin
+#   docker compose down
+
+services:
+  # ─── MongoDB ───────────────────────────────────────────────────────────
+  mongo:
+    image: mongo:7
+    container_name: portfolio_mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+      - mongo_config:/data/configdb
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - portfolio_net
+
+  # ─── Backend NestJS API ────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      target: dev          # hot reload stage
+    container_name: portfolio_backend
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      MONGO_URI: mongodb://mongo:27017/portfolio
+      JWT_SECRET: ${JWT_SECRET:-dev_secret_change_me_in_production}
+      JWT_EXPIRES_IN: 7d
+      CORS_ORIGIN: http://localhost:3000,http://localhost:5173
+      ADMIN_BOOTSTRAP_EMAIL: ${ADMIN_BOOTSTRAP_EMAIL:-admin@kevinefray.dev}
+      ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD:-ChangeMe!2026}
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend:/app
+      - backend_node_modules:/app/node_modules
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://localhost:3001/api/v1/projects"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - portfolio_net
+
+  # ─── Admin Next.js panel ───────────────────────────────────────────────
+  admin:
+    build:
+      context: ./admin
+      target: dev
+    container_name: portfolio_admin
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NODE_ENV: development
+      # Reachable from the browser, hence localhost (not "backend")
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api/v1
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./admin:/app
+      - admin_node_modules:/app/node_modules
+      - admin_next_cache:/app/.next
+    networks:
+      - portfolio_net
+
+  # ─── Portfolio Vite (optional, uncomment to add) ───────────────────────
+  # portfolio:
+  #   image: node:20-alpine
+  #   container_name: portfolio_front
+  #   working_dir: /app
+  #   command: sh -c "npm install --legacy-peer-deps && npm run dev -- --host 0.0.0.0"
+  #   ports:
+  #     - "5173:5173"
+  #   volumes:
+  #     - ../cv-3d:/app
+  #   networks:
+  #     - portfolio_net
+
+volumes:
+  mongo_data:
+  mongo_config:
+  backend_node_modules:
+  admin_node_modules:
+  admin_next_cache:
+
+networks:
+  portfolio_net:
+    driver: bridge
