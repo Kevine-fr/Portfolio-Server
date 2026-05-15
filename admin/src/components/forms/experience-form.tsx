@@ -1,5 +1,5 @@
 'use client';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FormField } from '@/components/ui/form-field';
+import { SkillsMultiSelect } from '@/components/ui/skills-multi-select';
 
 const schema = z.object({
   title:        z.string().min(2),
@@ -19,7 +20,7 @@ const schema = z.object({
   current:      z.boolean().optional(),
   description:  z.string().optional(),
   achievements: z.string().optional(),
-  techStack:    z.string().optional(),
+  techStack:    z.array(z.string()).default([]),
   order:        z.coerce.number().int().optional(),
 });
 
@@ -33,7 +34,7 @@ export function ExperienceForm({
   submitting?: boolean;
   onCancel: () => void;
 }) {
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<Values>({
+  const { register, handleSubmit, setValue, watch, control, formState: { errors } } = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: {
       title:        defaultValues?.title ?? '',
@@ -44,7 +45,7 @@ export function ExperienceForm({
       current:      defaultValues?.current ?? false,
       description:  defaultValues?.description ?? '',
       achievements: defaultValues?.achievements?.join('\n') ?? '',
-      techStack:    defaultValues?.techStack?.join(', ') ?? '',
+      techStack:    defaultValues?.techStack ?? [],
       order:        defaultValues?.order ?? 0,
     },
   });
@@ -55,7 +56,6 @@ export function ExperienceForm({
     const payload = {
       ...raw,
       achievements: raw.achievements ? raw.achievements.split('\n').map((a) => a.trim()).filter(Boolean) : [],
-      techStack:    raw.techStack    ? raw.techStack.split(',').map((t) => t.trim()).filter(Boolean)    : [],
       endDate:      raw.current ? undefined : raw.endDate || undefined,
     };
     return onSubmit(payload);
@@ -92,8 +92,14 @@ export function ExperienceForm({
       <FormField label="Réalisations" hint="Une par ligne">
         <Textarea rows={4} {...register('achievements')} placeholder="Mise en place de…" />
       </FormField>
-      <FormField label="Technologies" hint="Séparées par des virgules">
-        <Input placeholder="React, Node.js, Docker" {...register('techStack')} />
+      <FormField label="Technologies" hint="Sélectionnées parmi vos compétences enregistrées">
+        <Controller
+          control={control}
+          name="techStack"
+          render={({ field }) => (
+            <SkillsMultiSelect value={field.value} onChange={field.onChange} />
+          )}
+        />
       </FormField>
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end pt-4 border-t">
         <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>Annuler</Button>

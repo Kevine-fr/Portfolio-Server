@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { ValidationPipe, Logger, RequestMethod } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
@@ -8,8 +8,10 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
-  app.use(helmet());
-  app.setGlobalPrefix('api/v1');
+  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+  app.setGlobalPrefix('api/v1', {
+    exclude: [{ path: 'uploads/(.*)', method: RequestMethod.GET }],
+  });
 
   const origins = (process.env.CORS_ORIGIN || '').split(',').map((o) => o.trim());
   app.enableCors({

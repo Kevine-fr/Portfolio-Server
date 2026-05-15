@@ -11,7 +11,7 @@ export interface Project extends Timestamped {
   _id: ID; title: string; slug: string; subtitle?: string;
   description?: string; longDescription?: string;
   techStack: string[]; tags: Tag[] | ID[];
-  coverImage?: string; gallery: string[];
+  coverImage?: string; gallery: string[]; demoVideo?: string;
   liveUrl?: string; repoUrl?: string;
   featured: boolean; order: number;
   status: 'draft' | 'published' | 'archived';

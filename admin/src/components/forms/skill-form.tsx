@@ -1,5 +1,5 @@
 'use client';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
@@ -11,6 +11,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { FormField } from '@/components/ui/form-field';
+import { ImageUpload } from '@/components/ui/image-upload';
 
 const schema = z.object({
   name:     z.string().min(2),
@@ -35,7 +36,7 @@ export function SkillForm({
   submitting?: boolean;
   onCancel: () => void;
 }) {
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<Values>({
+  const { register, handleSubmit, setValue, watch, control, formState: { errors } } = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: {
       name:     defaultValues?.name ?? '',
@@ -50,8 +51,10 @@ export function SkillForm({
   const category = watch('category');
   const visible = watch('visible');
 
+  const internalSubmit = (raw: Values) => onSubmit({ ...raw, icon: raw.icon || undefined });
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(internalSubmit)} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField label="Nom" required error={errors.name?.message}>
           <Input {...register('name')} />
@@ -73,9 +76,17 @@ export function SkillForm({
           <Input type="number" {...register('order')} />
         </FormField>
       </div>
-      <FormField label="Icône (optionnel)" hint="Nom ou URL d'une icône">
-        <Input {...register('icon')} />
+
+      <FormField label="Icône (facultatif)" hint="Image carrée, fond transparent recommandé">
+        <Controller
+          control={control}
+          name="icon"
+          render={({ field }) => (
+            <ImageUpload size="sm" value={field.value} onChange={field.onChange} />
+          )}
+        />
       </FormField>
+
       <div className="flex items-start gap-3 rounded-md border p-4">
         <Checkbox id="visible" checked={visible} onCheckedChange={(v) => setValue('visible', !!v)} />
         <label htmlFor="visible" className="text-sm font-medium leading-none cursor-pointer">

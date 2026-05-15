@@ -105,13 +105,28 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 |----------------|-----------------------|----------------------------------|
 | `/login`       | Connexion             | Card centrée, animation fade     |
 | `/dashboard`   | Tableau de bord       | Stat cards, messages récents     |
-| `/projects`    | Projets               | Table desktop / cards mobile     |
-| `/skills`      | Compétences           | Grouped par catégorie, bars      |
-| `/experiences` | Expériences           | Cards timeline                   |
+| `/projects`    | Projets               | Formulaire à onglets + uploads médias |
+| `/skills`      | Compétences           | Grouped par catégorie, icône uploadable |
+| `/experiences` | Expériences           | Cards timeline + techStack dynamique |
 | `/education`   | Formation             | Cards                            |
 | `/tags`        | Étiquettes            | Création inline + color picker   |
 | `/contacts`    | Messages              | Inbox filtrable + dialog lecture |
 | `/users`       | Utilisateurs (admin)  | Table desktop / cards mobile     |
+
+### Médias et uploads
+
+Tous les médias sont **uploadés directement** depuis l'admin (drag-drop ou clic) :
+
+- **Image de couverture** des projets (upload single, aperçu)
+- **Galerie** d'un projet : jusqu'à **30 images** avec réorganisation (flèches) et suppression
+- **Vidéo de démo** d'un projet (facultative) : MP4, WebM ou MOV, 100 Mo max
+- **Icônes** des compétences (upload single compact)
+
+Stockage backend dans `/app/uploads` (volume Docker `backend_uploads`), exposés en statique sur `/uploads/*`. Limites : 10 Mo images, 100 Mo vidéos. Endpoint `POST /api/v1/uploads/{image|video}` (JWT requis).
+
+### Technologies dynamiques
+
+Le champ « Technologies » d'un projet ou d'une expérience est un **multi-select alimenté par vos Compétences enregistrées**, groupé par catégorie (Frontend / Backend / Outils / Design / Autre) avec recherche. Les compétences héritées d'anciennes saisies libres sont conservées et signalées.
 
 ---
 
@@ -133,6 +148,9 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 |--------|---------------------------|
 | POST   | `/auth/login`             |
 | GET    | `/auth/me`                |
+| POST   | `/uploads/image`          |
+| POST   | `/uploads/video`          |
+| DELETE | `/uploads/:filename`      |
 | POST/PATCH/DELETE | `/projects`, `/skills`, `/experiences`, `/education`, `/tags` |
 | GET/PATCH/DELETE  | `/contacts`        |
 | GET    | `/contacts/unread-count`  |

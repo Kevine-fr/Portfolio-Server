@@ -10,10 +10,18 @@ import { ExperiencesModule } from './modules/experiences/experiences.module';
 import { EducationModule } from './modules/education/education.module';
 import { TagsModule } from './modules/tags/tags.module';
 import { ContactsModule } from './modules/contacts/contacts.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ServeStaticModule.forRoot({
+      rootPath: process.env.UPLOAD_DIR || join(process.cwd(), 'uploads'),
+      serveRoot: '/uploads',
+      serveStaticOptions: { fallthrough: false, maxAge: '7d' },
+    }),
     MongooseModule.forRoot(process.env.MONGO_URI || 'mongodb://localhost:27017/portfolio'),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
     AuthModule,
@@ -24,6 +32,7 @@ import { ContactsModule } from './modules/contacts/contacts.module';
     EducationModule,
     TagsModule,
     ContactsModule,
+    UploadsModule,
   ],
 })
 export class AppModule {}

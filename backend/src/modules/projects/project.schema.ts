@@ -16,6 +16,7 @@ export class Project {
 
   @Prop() coverImage: string;
   @Prop({ default: [] }) gallery: string[];
+  @Prop() demoVideo: string;
 
   @Prop() liveUrl: string;
   @Prop() repoUrl: string;
