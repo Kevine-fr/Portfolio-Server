@@ -266,8 +266,8 @@ Dans **Settings → Secrets and variables → Actions** du repo :
 
 ```bash
 # MongoDB
-docker exec portfolio_mongo mongodump --archive=/tmp/dump.archive
-docker cp portfolio_mongo:/tmp/dump.archive ./backups/mongo-$(date +%F).archive
+docker exec portfolio-mongo mongodump --archive=/tmp/dump.archive
+docker cp portfolio-mongo:/tmp/dump.archive ./backups/mongo-$(date +%F).archive
 
 # Uploads (médias)
 docker run --rm -v portfolio-admin_backend_uploads:/data -v $(pwd)/backups:/backup \

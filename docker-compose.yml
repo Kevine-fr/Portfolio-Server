@@ -9,7 +9,7 @@ services:
   # ─── MongoDB ───────────────────────────────────────────────────────────
   mongo:
     image: mongo:7
-    container_name: portfolio_mongo
+    container_name: portfolio-mongo
     restart: unless-stopped
     ports:
       - "27017:27017"
@@ -30,7 +30,7 @@ services:
     build:
       context: ./backend
       target: dev          # hot reload stage
-    container_name: portfolio_backend
+    container_name: portfolio-api
     restart: unless-stopped
     depends_on:
       mongo:
@@ -65,7 +65,7 @@ services:
     build:
       context: ./admin
       target: dev
-    container_name: portfolio_admin
+    container_name: portfolio-admin
     restart: unless-stopped
     depends_on:
       - backend

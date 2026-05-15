@@ -17,7 +17,7 @@ services:
   # ─── MongoDB (internal only) ────────────────────────────────────────────
   mongo:
     image: mongo:7
-    container_name: portfolio_mongo
+    container_name: portfolio-mongo
     restart: always
     command: ["--bind_ip", "0.0.0.0", "--quiet"]
     volumes:
@@ -35,7 +35,7 @@ services:
   # ─── NestJS API ─────────────────────────────────────────────────────────
   backend:
     image: ${DOCKERHUB_NAMESPACE}/portfolio-api:${IMAGE_TAG}
-    container_name: portfolio_backend
+    container_name: portfolio-api
     restart: always
     depends_on:
       mongo:
@@ -73,7 +73,7 @@ services:
   # ─── Next.js admin ──────────────────────────────────────────────────────
   admin:
     image: ${DOCKERHUB_NAMESPACE}/portfolio-admin:${IMAGE_TAG}
-    container_name: portfolio_admin
+    container_name: portfolio-admin
     restart: always
     depends_on:
       - backend
