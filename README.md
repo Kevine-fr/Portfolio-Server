@@ -1,11 +1,9 @@
 # Portfolio Stack — Kevine Fray
 
-Full stack admin pour le portfolio cosmique :
-- **Backend NestJS** (API REST, MongoDB, JWT auth)
-- **Admin Next.js** (App Router, Tailwind palette portfolio)
+Stack full pour le portfolio :
+- **Backend NestJS** (API REST, MongoDB, JWT)
+- **Admin Next.js** (shadcn/ui, mode clair/sombre, français, mobile-first)
 - **MongoDB** (persistance)
-
-Le portfolio Vite/Three.js existant (dossier `cv-3d`) consomme la même API via les endpoints publics.
 
 ---
 
@@ -15,43 +13,34 @@ Le portfolio Vite/Three.js existant (dossier `cv-3d`) consomme la même API via 
 portfolio-stack/
 ├── backend/                  # NestJS API
 │   ├── src/
-│   │   ├── auth/            # JWT auth (login, /me, guards)
+│   │   ├── auth/            # JWT (login, /me, guards)
 │   │   ├── modules/         # 7 modules CRUD
-│   │   │   ├── users/
-│   │   │   ├── projects/
-│   │   │   ├── skills/
-│   │   │   ├── experiences/
-│   │   │   ├── education/
-│   │   │   ├── tags/
-│   │   │   └── contacts/
+│   │   │   ├── users/  projects/  skills/  experiences/
+│   │   │   ├── education/  tags/  contacts/
 │   │   ├── app.module.ts
-│   │   └── main.ts          # Boot + Swagger + CORS + Helmet
-│   ├── Dockerfile           # Multi-stage (dev / runner)
-│   └── package.json
-│
-├── admin/                    # Next.js 14 admin panel
-│   ├── src/
-│   │   ├── app/             # App Router pages
-│   │   │   ├── login/
-│   │   │   ├── dashboard/
-│   │   │   ├── projects/
-│   │   │   ├── skills/
-│   │   │   ├── experiences/
-│   │   │   ├── education/
-│   │   │   ├── tags/
-│   │   │   ├── contacts/
-│   │   │   └── users/
-│   │   ├── components/      # UI + layout + forms
-│   │   ├── lib/             # API client + auth store
-│   │   ├── types/           # Shared TS types
-│   │   └── styles/          # Global CSS + Tailwind tokens
+│   │   └── main.ts
 │   ├── Dockerfile
 │   └── package.json
 │
-├── .devcontainer/
-│   └── devcontainer.json    # VS Code remote container config
-├── docker-compose.yml       # Dev orchestration (default)
-├── docker-compose.prod.yml  # Production overrides
+├── admin/                    # Next.js 14 admin panel (shadcn/ui)
+│   ├── src/
+│   │   ├── app/             # App Router pages
+│   │   │   ├── login/  dashboard/  projects/  skills/
+│   │   │   ├── experiences/  education/  tags/
+│   │   │   ├── contacts/  users/
+│   │   ├── components/
+│   │   │   ├── ui/          # shadcn components (Button, Card, Dialog, …)
+│   │   │   ├── layout/      # AdminShell, SidebarNav, ThemeToggle, UserMenu
+│   │   │   └── forms/       # Forms react-hook-form + zod
+│   │   ├── lib/             # api.ts, auth.ts, utils.ts (cn)
+│   │   ├── hooks/           # use-media-query
+│   │   └── styles/          # globals.css (HSL vars shadcn)
+│   ├── Dockerfile
+│   └── package.json
+│
+├── .devcontainer/devcontainer.json
+├── docker-compose.yml
+├── docker-compose.prod.yml
 └── .env.example
 ```
 
@@ -59,48 +48,70 @@ portfolio-stack/
 
 ## Lancement rapide
 
-### 1. Configurer les variables d'environnement
+### 1. Configurer
 
 ```bash
 cp .env.example .env
-# Edite .env et remplace au minimum :
-#   JWT_SECRET (openssl rand -hex 64)
+# Édite .env :
+#   JWT_SECRET (génère avec : openssl rand -hex 64)
 #   ADMIN_BOOTSTRAP_PASSWORD
 ```
 
-### 2. Lancer la stack (dev, hot reload)
+### 2. Lancer
 
 ```bash
 docker compose up -d
 docker compose logs -f backend admin
 ```
 
-Au premier démarrage, un compte admin est créé automatiquement avec les credentials de `.env`. Les logs du backend afficheront `[bootstrap] Admin user created: ...`.
+Un compte admin est créé au premier lancement avec les identifiants de `.env`.
 
 ### 3. Accès
 
 | Service       | URL                                | Description                  |
 |---------------|------------------------------------|------------------------------|
-| Admin panel   | http://localhost:3000              | Interface Next.js            |
-| API REST      | http://localhost:3001/api/v1       | Endpoints REST               |
-| Swagger docs  | http://localhost:3001/api/docs     | Documentation OpenAPI        |
-| MongoDB       | mongodb://localhost:27017/portfolio| Direct DB access             |
+| Admin         | http://localhost:3000              | Panneau Next.js              |
+| API           | http://localhost:3001/api/v1       | Endpoints REST               |
+| Swagger       | http://localhost:3001/api/docs     | Documentation interactive    |
+| MongoDB       | mongodb://localhost:27017          |                              |
 
-### 4. Première connexion
-
-Va sur http://localhost:3000, login avec les credentials de bootstrap (`.env`).
-**Change immédiatement le mot de passe** depuis `/users`.
-
----
-
-## Lancement en production
+### 4. Production
 
 ```bash
-# Set production values in .env first!
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
-Les images runtime sont compilées (NestJS → `dist/`, Next.js → `standalone`), utilisateurs non-root, pas de volume source monté.
+---
+
+## Admin : ce qui est dans la v2 (shadcn/ui)
+
+- **shadcn/ui** intégré directement (sans CLI) : Button, Card, Dialog, AlertDialog, Sheet, Select, Checkbox, Avatar, DropdownMenu, Table, Badge, Skeleton, Separator, Label, Textarea, Input
+- **Mode clair / sombre / système** avec toggle dans la topbar (next-themes)
+- **Palette zinc neutre**, intemporelle et pro
+- **Tout en français** : labels, placeholders, messages d'erreur, toasts, dates (date-fns/fr)
+- **Toasts** : sonner avec colors riches + bouton close
+- **Animations** : fade-in, scale-in, slide-in, transitions de page
+- **Mobile-first responsive** :
+  - Sidebar fixe sur desktop (lg+), drawer (Sheet) sur mobile via burger menu
+  - Tables sur desktop, cards stack sur mobile
+  - Modals adaptés (scrollable, sm:rounded-lg)
+  - Boutons et actions adaptés
+- **Lucide icons** partout pour la cohérence
+- **Compteur live** des messages non lus dans la sidebar (refetch 30 s)
+
+### Pages admin (toutes en français)
+
+| Route          | Page                  | Composants spéciaux              |
+|----------------|-----------------------|----------------------------------|
+| `/login`       | Connexion             | Card centrée, animation fade     |
+| `/dashboard`   | Tableau de bord       | Stat cards, messages récents     |
+| `/projects`    | Projets               | Table desktop / cards mobile     |
+| `/skills`      | Compétences           | Grouped par catégorie, bars      |
+| `/experiences` | Expériences           | Cards timeline                   |
+| `/education`   | Formation             | Cards                            |
+| `/tags`        | Étiquettes            | Création inline + color picker   |
+| `/contacts`    | Messages              | Inbox filtrable + dialog lecture |
+| `/users`       | Utilisateurs (admin)  | Table desktop / cards mobile     |
 
 ---
 
@@ -108,57 +119,31 @@ Les images runtime sont compilées (NestJS → `dist/`, Next.js → `standalone`
 
 | Method | Endpoint                  | Description                          |
 |--------|---------------------------|--------------------------------------|
-| GET    | `/projects`               | Liste tous les projets               |
-| GET    | `/projects/slug/:slug`    | Détail projet par slug               |
+| GET    | `/projects`               | Liste des projets                    |
+| GET    | `/projects/slug/:slug`    | Détail projet                        |
 | GET    | `/skills`                 | Liste des compétences                |
 | GET    | `/experiences`            | Liste des expériences                |
 | GET    | `/education`              | Liste éducation                      |
-| GET    | `/tags`                   | Liste des tags                       |
-| POST   | `/contacts`               | Envoi formulaire de contact (rate-limited 5/min) |
+| GET    | `/tags`                   | Liste des étiquettes                 |
+| POST   | `/contacts`               | Envoi formulaire (rate-limited 5/min)|
 
-## API — endpoints protégés (JWT Bearer requis)
+## API — endpoints protégés (JWT Bearer)
 
-| Method | Endpoint                  | Description                          |
-|--------|---------------------------|--------------------------------------|
-| POST   | `/auth/login`             | `{ email, password }` → `{ accessToken, user }` |
-| GET    | `/auth/me`                | Profil utilisateur connecté          |
-| POST   | `/projects`               | Crée un projet                       |
-| PATCH  | `/projects/:id`           | Met à jour                           |
-| DELETE | `/projects/:id`           | Supprime                             |
-| ... (idem pour skills, experiences, education, tags) |
-| GET    | `/contacts`               | Boîte de réception (admin)           |
-| GET    | `/contacts/unread-count`  | Compteur non-lus                     |
-| PATCH  | `/contacts/:id`           | Marquer lu/archivé                   |
-| GET    | `/users`                  | Liste utilisateurs (admin only)      |
+| Method | Endpoint                  |
+|--------|---------------------------|
+| POST   | `/auth/login`             |
+| GET    | `/auth/me`                |
+| POST/PATCH/DELETE | `/projects`, `/skills`, `/experiences`, `/education`, `/tags` |
+| GET/PATCH/DELETE  | `/contacts`        |
+| GET    | `/contacts/unread-count`  |
+| Tout   | `/users` (admin uniquement) |
 
 ---
 
 ## Connecter le portfolio Vite au backend
 
-Dans `cv-3d/src/components/Sections/SectionContact.jsx`, remplace le mock submit par :
-
-```js
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
-
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setStatus('sending');
-  try {
-    const res = await fetch(`${API_URL}/contacts`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, subject, message }),
-    });
-    if (!res.ok) throw new Error('Failed');
-    setStatus('sent');
-    setName(''); setEmail(''); setSubject(''); setMessage('');
-  } catch {
-    setStatus('error');
-  }
-};
-```
-
-Et ajoute dans `cv-3d/.env.local` :
+Voir `SectionContact.example.jsx` qui POST sur `/contacts`.
+Ajoute dans `cv-3d/.env.local` :
 ```
 VITE_API_URL=http://localhost:3001/api/v1
 ```
@@ -168,42 +153,20 @@ VITE_API_URL=http://localhost:3001/api/v1
 ## Commandes utiles
 
 ```bash
-# Voir les logs en direct
-docker compose logs -f backend
-docker compose logs -f admin
-
-# Shell dans un conteneur
+docker compose logs -f backend admin
 docker compose exec backend sh
 docker compose exec mongo mongosh portfolio
-
-# Reset complet (perte de données !)
-docker compose down -v
-
-# Rebuild après changement de Dockerfile
-docker compose up -d --build backend
+docker compose down -v          # reset DB
+docker compose up -d --build    # rebuild
 ```
-
----
-
-## Stack technique
-
-**Backend**
-- NestJS 10 · Mongoose · Passport JWT · class-validator · Swagger · Helmet · Throttler
-
-**Admin**
-- Next.js 14 (App Router) · TypeScript · Tailwind CSS
-- TanStack Query · React Hook Form + Zod · Zustand · Sonner · Axios
-
-**Thème visuel** : palette identique au portfolio (`#050309` bg, `#d4c19a` goldPale, `#8a6f3f` goldDeep, `#ffd97a` goldGlow), JetBrains Mono pour les éléments console.
 
 ---
 
 ## Sécurité — checklist production
 
-- [ ] `JWT_SECRET` régénéré avec `openssl rand -hex 64`
-- [ ] `ADMIN_BOOTSTRAP_PASSWORD` changé en mot de passe fort
-- [ ] HTTPS activé devant le backend (reverse proxy : Nginx, Traefik, Caddy)
-- [ ] `CORS_ORIGIN` configuré avec les vrais domaines prod
-- [ ] MongoDB protégé par authentification (créer un user dédié, pas root)
-- [ ] Rate limiting éventuellement renforcé (cf. `app.module.ts`)
+- [ ] `JWT_SECRET` régénéré (`openssl rand -hex 64`)
+- [ ] `ADMIN_BOOTSTRAP_PASSWORD` fort
+- [ ] HTTPS via reverse proxy (Nginx/Traefik/Caddy)
+- [ ] `CORS_ORIGIN` configuré avec les vrais domaines
+- [ ] MongoDB avec auth (user dédié, pas root)
 - [ ] Backups MongoDB programmés

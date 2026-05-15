@@ -2,16 +2,23 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { apiGet, apiPost, apiPatch, apiDel } from '@/lib/api';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { Plus, Pencil, Trash2, Briefcase, MapPin } from 'lucide-react';
+import { apiGet, apiPost, apiPatch, apiDel, getErrorMessage } from '@/lib/api';
 import { Experience } from '@/types';
-import { PageHeader } from '@/components/ui/PageHeader';
-import { Loader } from '@/components/ui/Loader';
-import { EmptyState } from '@/components/ui/EmptyState';
-import { Modal } from '@/components/ui/Modal';
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { ExperienceForm } from '@/components/forms/ExperienceForm';
+import { PageHeader } from '@/components/ui/page-header';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { ExperienceForm } from '@/components/forms/experience-form';
 
-const fmt = (d?: string) => d ? new Date(d).toLocaleDateString('fr-FR', { year: 'numeric', month: 'short' }) : '';
+const fmtDate = (d?: string) =>
+  d ? format(new Date(d), 'MMM yyyy', { locale: fr }) : '';
 
 export default function ExperiencesPage() {
   const qc = useQueryClient();
@@ -23,82 +30,113 @@ export default function ExperiencesPage() {
 
   const createMut = useMutation({
     mutationFn: (p: any) => apiPost('/experiences', p),
-    onSuccess:  () => { qc.invalidateQueries({ queryKey: ['experiences'] }); toast.success('Experience created'); setCreating(false); },
-    onError:    (e: any) => toast.error(e?.response?.data?.message || 'Create failed'),
+    onSuccess:  () => { qc.invalidateQueries({ queryKey: ['experiences'] }); toast.success('Expérience ajoutée'); setCreating(false); },
+    onError:    (err) => toast.error('Échec', { description: getErrorMessage(err) }),
   });
   const updateMut = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: any }) => apiPatch(`/experiences/${id}`, payload),
-    onSuccess:  () => { qc.invalidateQueries({ queryKey: ['experiences'] }); toast.success('Experience updated'); setEditing(null); },
-    onError:    (e: any) => toast.error(e?.response?.data?.message || 'Update failed'),
+    onSuccess:  () => { qc.invalidateQueries({ queryKey: ['experiences'] }); toast.success('Expérience modifiée'); setEditing(null); },
+    onError:    (err) => toast.error('Échec', { description: getErrorMessage(err) }),
   });
   const deleteMut = useMutation({
     mutationFn: (id: string) => apiDel(`/experiences/${id}`),
-    onSuccess:  () => { qc.invalidateQueries({ queryKey: ['experiences'] }); toast.success('Deleted'); setToDelete(null); },
+    onSuccess:  () => { qc.invalidateQueries({ queryKey: ['experiences'] }); toast.success('Supprimée'); setToDelete(null); },
+    onError:    (err) => toast.error('Échec', { description: getErrorMessage(err) }),
   });
 
   return (
     <>
       <PageHeader
-        prompt="experiences.timeline"
-        title="Experiences"
-        subtitle="Professional journey across the constellation of work."
-        actions={<button className="btn-primary" onClick={() => setCreating(true)}>+ new experience</button>}
+        title="Expériences"
+        description="Parcours professionnel affiché sur le portfolio."
+        actions={<Button onClick={() => setCreating(true)}><Plus className="h-4 w-4" /> Nouvelle expérience</Button>}
       />
 
-      {isLoading ? <Loader /> :
-        !data || data.length === 0 ? (
-          <EmptyState
-            title="Empty timeline"
-            description="Add your first experience."
-            action={<button className="btn-primary" onClick={() => setCreating(true)}>+ new experience</button>}
-          />
-        ) : (
-          <div className="space-y-4">
-            {data.map((x) => (
-              <div key={x._id} className="card-gold p-5 group">
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <h3 className="text-whiteHex font-semibold">{x.title}</h3>
-                      {x.current && <span className="badge badge-success">current</span>}
+      {isLoading ? (
+        <div className="space-y-3">{[1,2,3].map((i) => <Skeleton key={i} className="h-32 w-full" />)}</div>
+      ) : !data || data.length === 0 ? (
+        <EmptyState icon={Briefcase} title="Aucune expérience" description="Ajoutez votre première expérience professionnelle."
+          action={<Button onClick={() => setCreating(true)}><Plus className="h-4 w-4" /> Nouvelle expérience</Button>} />
+      ) : (
+        <div className="space-y-3">
+          {data.map((x) => (
+            <Card key={x._id} className="group animate-fade-in">
+              <CardContent className="p-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-semibold">{x.title}</h3>
+                      {x.current && <Badge variant="success">En cours</Badge>}
                     </div>
-                    <p className="text-goldPale text-sm font-mono mb-1">{x.company}{x.location ? ` · ${x.location}` : ''}</p>
-                    <p className="text-muted text-xs font-mono mb-3">{fmt(x.startDate)} → {x.current ? 'present' : fmt(x.endDate)}</p>
-                    {x.description && <p className="text-whiteHex/80 text-sm mb-2">{x.description}</p>}
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                      <span className="font-medium text-foreground">{x.company}</span>
+                      {x.location && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3" /> {x.location}
+                        </span>
+                      )}
+                      <span className="text-xs">
+                        {fmtDate(x.startDate)} → {x.current ? 'aujourd\'hui' : fmtDate(x.endDate)}
+                      </span>
+                    </div>
+                    {x.description && <p className="text-sm text-foreground/80">{x.description}</p>}
                     {x.achievements.length > 0 && (
-                      <ul className="text-sm text-whiteHex/70 list-disc list-inside space-y-0.5 mb-2">
+                      <ul className="ml-5 list-disc text-sm text-foreground/70 space-y-0.5">
                         {x.achievements.map((a, i) => <li key={i}>{a}</li>)}
                       </ul>
                     )}
                     {x.techStack.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {x.techStack.map((t) => <span key={t} className="badge badge-muted">{t}</span>)}
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {x.techStack.map((t) => <Badge key={t} variant="outline">{t}</Badge>)}
                       </div>
                     )}
                   </div>
-                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button className="btn-ghost !px-3 !py-1 !text-xs" onClick={() => setEditing(x)}>edit</button>
-                    <button className="btn-danger !px-3 !py-1 !text-xs" onClick={() => setToDelete(x)}>delete</button>
+                  <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setEditing(x)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setToDelete(x)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )
-      }
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
-      <Modal open={creating} onClose={() => setCreating(false)} title="New experience" prompt="experiences.create" size="lg">
-        <ExperienceForm submitting={createMut.isPending} onSubmit={(p) => createMut.mutateAsync(p)} onCancel={() => setCreating(false)} />
-      </Modal>
-      <Modal open={!!editing} onClose={() => setEditing(null)} title={`Edit · ${editing?.title}`} prompt="experiences.edit" size="lg">
-        {editing && (
-          <ExperienceForm defaultValues={editing} submitting={updateMut.isPending}
-            onSubmit={(p) => updateMut.mutateAsync({ id: editing._id, payload: p })}
-            onCancel={() => setEditing(null)} />
-        )}
-      </Modal>
-      <ConfirmDialog open={!!toDelete} title={`Delete "${toDelete?.title}"?`} destructive confirmLabel="Delete"
-        onConfirm={() => toDelete && deleteMut.mutate(toDelete._id)} onCancel={() => setToDelete(null)} />
+      <Dialog open={creating} onOpenChange={setCreating}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Nouvelle expérience</DialogTitle>
+            <DialogDescription>Ajoutez une expérience professionnelle.</DialogDescription>
+          </DialogHeader>
+          <ExperienceForm submitting={createMut.isPending} onSubmit={(p) => createMut.mutateAsync(p)} onCancel={() => setCreating(false)} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Modifier l'expérience</DialogTitle>
+            <DialogDescription>{editing?.title}</DialogDescription>
+          </DialogHeader>
+          {editing && (
+            <ExperienceForm defaultValues={editing} submitting={updateMut.isPending}
+              onSubmit={(p) => updateMut.mutateAsync({ id: editing._id, payload: p })}
+              onCancel={() => setEditing(null)} />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}
+        title="Supprimer cette expérience ?"
+        description={toDelete ? `« ${toDelete.title} chez ${toDelete.company} » sera supprimée.` : ''}
+        confirmLabel="Supprimer" destructive loading={deleteMut.isPending}
+        onConfirm={() => toDelete && deleteMut.mutate(toDelete._id)}
+      />
     </>
   );
 }

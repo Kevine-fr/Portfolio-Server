@@ -20,7 +20,6 @@ type AuthState = {
 };
 
 function setTokenCookie(token: string) {
-  // 7-day expiry, secure flag in production
   const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
   document.cookie = `portfolio_token=${encodeURIComponent(token)}; path=/; max-age=${7 * 24 * 3600}; SameSite=Lax${isSecure ? '; Secure' : ''}`;
 }

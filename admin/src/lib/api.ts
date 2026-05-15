@@ -8,19 +8,14 @@ function getTokenFromCookie(): string | null {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
-export const api: AxiosInstance = axios.create({
-  baseURL: API_URL,
-  withCredentials: false,
-});
+export const api: AxiosInstance = axios.create({ baseURL: API_URL });
 
-// Inject Authorization header on every request
 api.interceptors.request.use((config) => {
   const token = getTokenFromCookie();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-// Global 401 handler — redirect to /login
 api.interceptors.response.use(
   (res) => res,
   (err: AxiosError) => {
@@ -34,8 +29,15 @@ api.interceptors.response.use(
   },
 );
 
-// Convenience helpers
 export const apiGet  = <T,>(url: string, params?: any) => api.get<T>(url, { params }).then((r) => r.data);
 export const apiPost = <T,>(url: string, data?: any)   => api.post<T>(url, data).then((r) => r.data);
 export const apiPatch= <T,>(url: string, data?: any)   => api.patch<T>(url, data).then((r) => r.data);
 export const apiDel  = <T,>(url: string)               => api.delete<T>(url).then((r) => r.data);
+
+// Extracts error message from axios error in French
+export function getErrorMessage(err: any, fallback = 'Une erreur est survenue'): string {
+  const msg = err?.response?.data?.message;
+  if (Array.isArray(msg)) return msg.join(', ');
+  if (typeof msg === 'string') return msg;
+  return err?.message || fallback;
+}
