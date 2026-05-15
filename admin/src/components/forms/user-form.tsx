@@ -27,7 +27,7 @@ export function UserForm({
   defaultValues, onSubmit, submitting, onCancel, isEdit,
 }: {
   defaultValues?: Partial<User>;
-  onSubmit: (data: any) => void | Promise<void>;
+  onSubmit: (data: any) => unknown | Promise<unknown>;
   submitting?: boolean;
   onCancel: () => void;
   isEdit?: boolean;

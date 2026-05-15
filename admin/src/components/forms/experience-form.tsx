@@ -30,7 +30,7 @@ export function ExperienceForm({
   defaultValues, onSubmit, submitting, onCancel,
 }: {
   defaultValues?: Partial<Experience>;
-  onSubmit: (data: any) => void | Promise<void>;
+  onSubmit: (data: any) => unknown | Promise<unknown>;
   submitting?: boolean;
   onCancel: () => void;
 }) {

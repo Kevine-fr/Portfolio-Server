@@ -40,7 +40,7 @@ export type ProjectFormValues = z.infer<typeof schema>;
 
 interface Props {
   defaultValues?: Partial<Project>;
-  onSubmit: (data: any) => void | Promise<void>;
+  onSubmit: (data: any) => unknown | Promise<unknown>;
   submitting?: boolean;
   onCancel: () => void;
 }
