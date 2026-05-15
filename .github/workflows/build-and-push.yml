@@ -48,17 +48,15 @@ jobs:
     needs: version
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
           - service: backend
             context: ./backend
-            image:   portfolio-api
-            build_args: ""
+            image:   portfolio-backend
           - service: admin
             context: ./admin
             image:   portfolio-admin
-            build_args: |
-              NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -81,6 +79,8 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.image }}:${{ needs.version.outputs.image_tag }}
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.image }}:latest
-          build-args: ${{ matrix.build_args }}
+          # Only the admin image needs build args (Next.js bakes NEXT_PUBLIC_* at build time).
+          # Secrets context isn't accessible inside `matrix.*`, hence this inline ternary.
+          build-args: ${{ matrix.service == 'admin' && format('NEXT_PUBLIC_API_URL={0}', secrets.NEXT_PUBLIC_API_URL) || '' }}
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.image }}:buildcache
           cache-to:   type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.image }}:buildcache,mode=max
