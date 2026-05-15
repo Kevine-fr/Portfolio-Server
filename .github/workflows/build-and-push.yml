@@ -53,7 +53,7 @@ jobs:
         include:
           - service: backend
             context: ./backend
-            image:   portfolio-backend
+            image:   portfolio-api
           - service: admin
             context: ./admin
             image:   portfolio-admin
