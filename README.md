@@ -184,7 +184,103 @@ docker compose up -d --build    # rebuild
 
 - [ ] `JWT_SECRET` régénéré (`openssl rand -hex 64`)
 - [ ] `ADMIN_BOOTSTRAP_PASSWORD` fort
-- [ ] HTTPS via reverse proxy (Nginx/Traefik/Caddy)
+- [ ] HTTPS via reverse proxy (Traefik dans la config fournie)
 - [ ] `CORS_ORIGIN` configuré avec les vrais domaines
-- [ ] MongoDB avec auth (user dédié, pas root)
-- [ ] Backups MongoDB programmés
+- [ ] MongoDB avec auth si exposé (pas le cas par défaut — interne seulement)
+- [ ] Backups MongoDB et volume `backend_uploads` programmés
+
+---
+
+## Déploiement production (VPS + Traefik + DockerHub)
+
+### Architecture
+
+| Composant | Domaine | Image |
+|---|---|---|
+| Portfolio Vite | `kevinefray.dev` | (existant) `zstin4/web-portfolio` |
+| Admin Next.js | `admin.kevinefray.dev` | `zstin4/portfolio-admin` |
+| API NestJS + uploads | `api.kevinefray.dev` | `zstin4/portfolio-api` |
+| MongoDB | (interne) | `mongo:7` |
+
+Adapte ces domaines à tes secrets GitHub.
+
+### Pré-requis sur le VPS
+
+1. **Traefik** déjà en place, écoute le réseau Docker externe `web` (déjà ton cas).
+2. **DNS** : ajoute deux A-records `admin` et `api` pointant sur l'IP du VPS.
+3. **Crée le dossier de déploiement** et clone le repo :
+   ```bash
+   mkdir -p ~/deploy && cd ~/deploy
+   git clone git@github.com:<toi>/Portfolio-Admin.git
+   cd Portfolio-Admin
+   ```
+
+### Secrets GitHub à créer
+
+Dans **Settings → Secrets and variables → Actions** du repo :
+
+| Secret | Exemple / valeur |
+|---|---|
+| `DOCKERHUB_USERNAME` | `zstin4` |
+| `DOCKERHUB_TOKEN` | token DockerHub (write) |
+| `VPS_HOST` | `vps.kevinefray.dev` ou IP |
+| `VPS_USERNAME` | `kevine` |
+| `VPS_SSH_KEY` | clé privée SSH (multi-ligne) |
+| `NEXT_PUBLIC_API_URL` | `https://api.kevinefray.dev/api/v1` |
+| `API_DOMAIN` | `api.kevinefray.dev` |
+| `ADMIN_DOMAIN` | `admin.kevinefray.dev` |
+| `PORTFOLIO_DOMAIN` | `kevinefray.dev` (pour CORS) |
+| `CERT_RESOLVER` | nom du certresolver Traefik (souvent `letsencrypt`) |
+| `JWT_SECRET` | `openssl rand -hex 64` |
+| `ADMIN_BOOTSTRAP_EMAIL` | `admin@kevinefray.dev` |
+| `ADMIN_BOOTSTRAP_PASSWORD` | mot de passe fort |
+
+### Repos DockerHub à créer
+
+- `zstin4/portfolio-api` (public ou privé)
+- `zstin4/portfolio-admin` (idem)
+
+### Première mise en route
+
+1. **Push sur `main`** : la CI build les deux images en parallèle (matrix), tag `prod-vX.Y.Z`, puis le workflow `Deploy Production` se déclenche automatiquement via `workflow_run`.
+
+2. **Premier deploy** : sur le VPS, le workflow va `git pull` la dernière version, générer le `.env` depuis les secrets, puis `docker compose pull && up -d`. Le bootstrap admin (`ADMIN_BOOTSTRAP_*`) crée le premier compte au démarrage.
+
+3. **Vérifie** :
+   ```bash
+   docker compose -f docker-compose.prod.yml ps
+   docker compose -f docker-compose.prod.yml logs -f backend admin
+   curl https://api.kevinefray.dev/api/v1/projects   # doit répondre []
+   ```
+
+### Workflow CI/CD
+
+- **`build-and-push.yml`** (sur push main)
+  - Bump `vX.Y.Z` automatique depuis le dernier tag
+  - Push deux images : `portfolio-api` et `portfolio-admin` taguées `prod-vX.Y.Z` + `latest`
+  - Cache buildx via tag `:buildcache` pour accélérer les rebuilds
+- **`deploy.yml`** (sur `workflow_run` success)
+  - SSH sur le VPS, `git reset --hard origin/main`, regénère `.env`, `docker compose pull && up -d`
+
+### Backup recommandé
+
+```bash
+# MongoDB
+docker exec portfolio_mongo mongodump --archive=/tmp/dump.archive
+docker cp portfolio_mongo:/tmp/dump.archive ./backups/mongo-$(date +%F).archive
+
+# Uploads (médias)
+docker run --rm -v portfolio-admin_backend_uploads:/data -v $(pwd)/backups:/backup \
+  alpine tar czf /backup/uploads-$(date +%F).tar.gz -C /data .
+```
+
+À mettre dans un cron sur le VPS, plus un offsite (S3, Backblaze, etc.).
+
+### Rollback
+
+```bash
+ssh kevine@vps "cd ~/deploy/Portfolio-Admin && \
+  sed -i 's/IMAGE_TAG=.*/IMAGE_TAG=prod-vX.Y.Z/' .env && \
+  docker compose -f docker-compose.prod.yml pull && \
+  docker compose -f docker-compose.prod.yml up -d"
+```

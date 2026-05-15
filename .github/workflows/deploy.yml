@@ -1,0 +1,77 @@
+name: Deploy Production
+
+on:
+  workflow_run:
+    workflows:
+      - "Build & Push Production Images"
+    types:
+      - completed
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Add VPS to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Fetch tags
+        run: git fetch --tags
+
+      - name: Resolve latest tag
+        id: tag
+        run: |
+          LAST_TAG=$(git tag --list "v*" --sort=-v:refname | head -n 1)
+          echo "IMAGE_TAG=prod-$LAST_TAG" >> $GITHUB_ENV
+          echo "Using IMAGE_TAG=prod-$LAST_TAG"
+
+      - name: Deploy to VPS
+        env:
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+        run: |
+          ssh ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} bash <<EOF
+          set -euo pipefail
+          cd /home/${{ secrets.VPS_USERNAME }}/deploy/Portfolio-Server
+
+          echo "→ Pull du code (docker-compose.prod.yml à jour)..."
+          git fetch origin
+          git reset --hard origin/main
+
+          echo "→ Génération du .env..."
+          cat > .env << 'ENVEOF'
+          IMAGE_TAG=${IMAGE_TAG}
+          DOCKERHUB_NAMESPACE=${{ secrets.DOCKERHUB_USERNAME }}
+          API_DOMAIN=${{ secrets.API_DOMAIN }}
+          ADMIN_DOMAIN=${{ secrets.ADMIN_DOMAIN }}
+          PORTFOLIO_DOMAIN=${{ secrets.PORTFOLIO_DOMAIN }}
+          CERT_RESOLVER=${{ secrets.CERT_RESOLVER }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          ADMIN_BOOTSTRAP_EMAIL=${{ secrets.ADMIN_BOOTSTRAP_EMAIL }}
+          ADMIN_BOOTSTRAP_PASSWORD=${{ secrets.ADMIN_BOOTSTRAP_PASSWORD }}
+          ENVEOF
+          chmod 600 .env
+
+          echo "→ Pull des images Docker..."
+          docker compose -f docker-compose.prod.yml pull
+
+          echo "→ Démarrage..."
+          docker compose -f docker-compose.prod.yml up -d --remove-orphans
+
+          echo "→ Nettoyage des images obsolètes..."
+          docker image prune -af
+
+          echo "→ Statut :"
+          docker compose -f docker-compose.prod.yml ps
+          EOF

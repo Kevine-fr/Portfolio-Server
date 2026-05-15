@@ -1,19 +1,106 @@
-# Production overrides — usage:
-#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# Production stack — usage:
+#   docker compose -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.prod.yml up -d --remove-orphans
+#
+# Required env (in .env on the VPS):
+#   IMAGE_TAG                  (e.g. prod-v1.0.5 — supplied by CI)
+#   DOCKERHUB_NAMESPACE        (e.g. zstin4)
+#   API_DOMAIN                 (e.g. api.kevinefray.dev)
+#   ADMIN_DOMAIN               (e.g. admin.kevinefray.dev)
+#   PORTFOLIO_DOMAIN           (e.g. kevinefray.dev — for CORS only)
+#   CERT_RESOLVER              (Traefik certresolver name, e.g. letsencrypt)
+#   JWT_SECRET
+#   ADMIN_BOOTSTRAP_EMAIL
+#   ADMIN_BOOTSTRAP_PASSWORD
 
 services:
-  backend:
-    build:
-      target: runner       # production stage (built JS, non-root, smaller)
-    volumes: []            # no live source mount in prod
-    environment:
-      NODE_ENV: production
+  # ─── MongoDB (internal only) ────────────────────────────────────────────
+  mongo:
+    image: mongo:7
+    container_name: portfolio_mongo
+    restart: always
+    command: ["--bind_ip", "0.0.0.0", "--quiet"]
+    volumes:
+      - mongo_data:/data/db
+      - mongo_config:/data/configdb
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - portfolio_net
 
-  admin:
-    build:
-      target: runner
-      args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001/api/v1}
-    volumes: []
+  # ─── NestJS API ─────────────────────────────────────────────────────────
+  backend:
+    image: ${DOCKERHUB_NAMESPACE}/portfolio-api:${IMAGE_TAG}
+    container_name: portfolio_backend
+    restart: always
+    depends_on:
+      mongo:
+        condition: service_healthy
     environment:
       NODE_ENV: production
+      PORT: 3001
+      MONGO_URI: mongodb://mongo:27017/portfolio
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: 7d
+      CORS_ORIGIN: https://${ADMIN_DOMAIN},https://${PORTFOLIO_DOMAIN}
+      ADMIN_BOOTSTRAP_EMAIL: ${ADMIN_BOOTSTRAP_EMAIL}
+      ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD}
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - backend_uploads:/app/uploads
+    expose:
+      - "3001"
+    networks:
+      - portfolio_net
+      - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=web"
+      # HTTPS router
+      - "traefik.http.routers.portfolio-api.rule=Host(`${API_DOMAIN}`)"
+      - "traefik.http.routers.portfolio-api.entrypoints=websecure"
+      - "traefik.http.routers.portfolio-api.tls=true"
+      - "traefik.http.routers.portfolio-api.tls.certresolver=${CERT_RESOLVER}"
+      - "traefik.http.services.portfolio-api.loadbalancer.server.port=3001"
+      # Body size limit for uploads (100 MB videos)
+      - "traefik.http.middlewares.portfolio-api-bodylimit.buffering.maxRequestBodyBytes=104857600"
+      - "traefik.http.routers.portfolio-api.middlewares=portfolio-api-bodylimit"
+
+  # ─── Next.js admin ──────────────────────────────────────────────────────
+  admin:
+    image: ${DOCKERHUB_NAMESPACE}/portfolio-admin:${IMAGE_TAG}
+    container_name: portfolio_admin
+    restart: always
+    depends_on:
+      - backend
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    expose:
+      - "3000"
+    networks:
+      - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=web"
+      - "traefik.http.routers.portfolio-admin.rule=Host(`${ADMIN_DOMAIN}`)"
+      - "traefik.http.routers.portfolio-admin.entrypoints=websecure"
+      - "traefik.http.routers.portfolio-admin.tls=true"
+      - "traefik.http.routers.portfolio-admin.tls.certresolver=${CERT_RESOLVER}"
+      - "traefik.http.services.portfolio-admin.loadbalancer.server.port=3000"
+
+volumes:
+  mongo_data:
+  mongo_config:
+  backend_uploads:
+
+networks:
+  portfolio_net:
+    driver: bridge
+  web:
+    external: true
+    name: web
