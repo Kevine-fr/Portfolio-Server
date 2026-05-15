@@ -19,7 +19,7 @@ services:
     image: mongo:7
     container_name: portfolio-mongo
     restart: always
-    command: ["--bind_ip", "0.0.0.0", "--quiet"]
+    command: ["--bind_ip", "0.0.0.0", "--quiet"] 
     volumes:
       - mongo_data:/data/db
       - mongo_config:/data/configdb
