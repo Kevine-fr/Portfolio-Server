@@ -1,0 +1,46 @@
+# syntax=docker/dockerfile:1
+# ───────────────────────────────────────────────────────────────────────────
+# Stage 1: deps — install full deps for build
+# ───────────────────────────────────────────────────────────────────────────
+FROM node:20-alpine AS deps
+WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm ci --legacy-peer-deps
+
+# ───────────────────────────────────────────────────────────────────────────
+# Stage 2: builder
+# ───────────────────────────────────────────────────────────────────────────
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN npm run build
+
+# ───────────────────────────────────────────────────────────────────────────
+# Stage 3: runner — minimal prod image
+# ───────────────────────────────────────────────────────────────────────────
+FROM node:20-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+
+# Install only production deps
+COPY package.json package-lock.json* ./
+RUN npm ci --omit=dev --legacy-peer-deps && npm cache clean --force
+
+# Copy compiled JS
+COPY --from=builder /app/dist ./dist
+
+# Create non-root user + uploads dir (writable)
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nestjs -u 1001 && \
+    mkdir -p /app/uploads && \
+    chown -R nestjs:nodejs /app
+
+USER nestjs
+EXPOSE 3001
+
+# wget for the healthcheck
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD wget --quiet --spider http://localhost:3001/api/v1/projects || exit 1
+
+CMD ["node", "dist/main.js"]
