@@ -11,8 +11,10 @@ import { EducationModule } from './modules/education/education.module';
 import { TagsModule } from './modules/tags/tags.module';
 import { ContactsModule } from './modules/contacts/contacts.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
+import { AboutModule } from './modules/about/about.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { HealthController } from './health.controller';
 
 @Module({
   imports: [
@@ -33,6 +35,8 @@ import { join } from 'path';
     TagsModule,
     ContactsModule,
     UploadsModule,
+    AboutModule,
   ],
+  controllers: [HealthController],
 })
 export class AppModule {}

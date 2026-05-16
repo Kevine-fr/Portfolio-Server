@@ -35,3 +35,23 @@ export interface Contact extends Timestamped {
   _id: ID; name: string; email: string; subject?: string; message: string;
   read: boolean; archived: boolean; ip?: string; userAgent?: string;
 }
+
+export interface TimelineEntry {
+  year: string;
+  title: string;
+  description?: string;
+  order?: number;
+}
+export interface ValueEntry {
+  icon: string;
+  title: string;
+  description?: string;
+  order?: number;
+}
+export interface About extends Partial<Timestamped> {
+  _id?: ID;
+  title?: string;
+  bio?: string;
+  timeline: TimelineEntry[];
+  values: ValueEntry[];
+}
