@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Plus, Trash2, GripVertical, Loader2, Info } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Loader2, Info, FileText } from 'lucide-react';
 import { apiGet, api, getErrorMessage } from '@/lib/api';
 import type { About, TimelineEntry, ValueEntry } from '@/types';
 import { PageHeader } from '@/components/ui/page-header';
@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { FormField } from '@/components/ui/form-field';
+import { DocumentUpload } from '@/components/ui/document-upload';
 
 // Small helper since lib/api.ts doesn't expose apiPut
 const apiPut = <T,>(url: string, data?: any) => api.put<T>(url, data).then(r => r.data);
@@ -28,6 +29,8 @@ export default function AboutPage() {
   // Local form state — initialized from query
   const [title, setTitle] = useState('');
   const [bio, setBio]     = useState('');
+  const [cvUrl, setCvUrl] = useState('');
+  const [cvFilename, setCvFilename] = useState('');
   const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
   const [values, setValues]     = useState<ValueEntry[]>([]);
 
@@ -35,6 +38,8 @@ export default function AboutPage() {
     if (!data) return;
     setTitle(data.title || 'Qui suis-je ?');
     setBio(data.bio || '');
+    setCvUrl((data as any).cvUrl || '');
+    setCvFilename((data as any).cvFilename || '');
     setTimeline([...(data.timeline || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
     setValues([...(data.values || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
   }, [data]);
@@ -49,6 +54,8 @@ export default function AboutPage() {
     saveMut.mutate({
       title: title.trim() || 'Qui suis-je ?',
       bio: bio.trim(),
+      cvUrl: cvUrl || '',
+      cvFilename: cvFilename || '',
       timeline: timeline.map((t, i) => ({ ...t, order: i })),
       values:   values.map((v, i)   => ({ ...v, order: i })),
     });
@@ -141,6 +148,31 @@ export default function AboutPage() {
                   }}
                 />
               </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* ─── CV (PDF) ──────────────────────────────────────────────────── */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileText className="h-4 w-4" /> CV téléchargeable
+            </CardTitle>
+            <CardDescription>
+              Téléverse ton CV au format PDF. Il sera proposé au téléchargement via le bouton « TELECHARGER CV » du portfolio.
+              Si aucun CV n'est défini, le bouton est automatiquement masqué.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DocumentUpload
+              value={cvUrl}
+              filename={cvFilename}
+              onChange={(url, name) => { setCvUrl(url); setCvFilename(name || ''); }}
+            />
+            {cvUrl && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                Pense à cliquer sur <strong>Enregistrer</strong> pour que le changement soit pris en compte sur le portfolio.
+              </p>
             )}
           </CardContent>
         </Card>

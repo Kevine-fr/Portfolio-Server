@@ -24,9 +24,10 @@ interface MulterFile {
   path: string;
 }
 
-// 10 MB images, 100 MB videos
+// 10 MB images, 100 MB videos, 20 MB documents (PDF/DOC)
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
+const MAX_DOC_BYTES   = 20 * 1024 * 1024;
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || join(process.cwd(), 'uploads');
 if (!existsSync(UPLOAD_DIR)) mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -42,7 +43,12 @@ const ALLOWED_VIDEO_MIMES = new Set([
   'video/x-matroska', 'video/matroska',       // .mkv (not browser-playable)
   'video/x-msvideo', 'video/avi',             // .avi  (not browser-playable)
 ]);
-const SAFE_EXT = /^\.(jpe?g|png|webp|gif|avif|heic|heif|mp4|webm|ogv|mov|m4v|mkv|avi)$/i;
+const ALLOWED_DOC_MIMES = new Set([
+  'application/pdf',
+  'application/msword',                                                           // .doc
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',      // .docx
+]);
+const SAFE_EXT = /^\.(jpe?g|png|webp|gif|avif|heic|heif|mp4|webm|ogv|mov|m4v|mkv|avi|pdf|docx?|odt)$/i;
 
 const storage = diskStorage({
   destination: (_req, _file, cb) => cb(null, UPLOAD_DIR),
@@ -114,6 +120,33 @@ export class UploadsController {
       filename: file.filename,
       size:     file.size,
       mimetype: file.mimetype,
+    };
+  }
+
+  @Post('document')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } } })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage,
+      fileFilter: makeFileFilter(ALLOWED_DOC_MIMES, 'de document'),
+      limits: { fileSize: MAX_DOC_BYTES },
+    }),
+  )
+  uploadDocument(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [new MaxFileSizeValidator({ maxSize: MAX_DOC_BYTES })],
+      }),
+    )
+    file: MulterFile,
+  ) {
+    return {
+      url:      `/uploads/${file.filename}`,
+      filename: file.filename,
+      size:     file.size,
+      mimetype: file.mimetype,
+      originalName: file.originalname,
     };
   }
 

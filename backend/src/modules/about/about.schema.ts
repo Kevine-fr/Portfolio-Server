@@ -31,6 +31,11 @@ export class About extends Document {
   // Question shown above the bio (Title of the About section)
   @Prop({ default: 'Qui suis-je ?' }) title: string;
 
+  // CV download — path returned by /uploads/document
+  @Prop({ default: '' }) cvUrl: string;
+  // Original filename, used for the download attribute
+  @Prop({ default: '' }) cvFilename: string;
+
   @Prop({ type: [TimelineEntrySchema], default: [] }) timeline: TimelineEntry[];
   @Prop({ type: [ValueEntrySchema],    default: [] }) values:   ValueEntry[];
 }

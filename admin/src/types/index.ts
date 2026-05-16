@@ -52,6 +52,8 @@ export interface About extends Partial<Timestamped> {
   _id?: ID;
   title?: string;
   bio?: string;
+  cvUrl?: string;
+  cvFilename?: string;
   timeline: TimelineEntry[];
   values: ValueEntry[];
 }

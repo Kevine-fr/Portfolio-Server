@@ -20,6 +20,8 @@ class ValueEntryDto {
 export class UpdateAboutDto {
   @IsOptional() @IsString() bio?: string;
   @IsOptional() @IsString() title?: string;
+  @IsOptional() @IsString() cvUrl?: string;
+  @IsOptional() @IsString() cvFilename?: string;
 
   @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => TimelineEntryDto)
   timeline?: TimelineEntryDto[];
