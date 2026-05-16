@@ -4,13 +4,34 @@ import { Model } from 'mongoose';
 import { About } from './about.schema';
 import { UpdateAboutDto } from './about.dto';
 
-// Default content used when the singleton has not been created yet.
+// Default content used when the singleton has not been created yet
+// or when an existing record is missing some of the newer fields.
 const DEFAULT_ABOUT = {
   kind: 'default',
+
+  // Hero
+  firstName: 'Kevine',
+  lastName:  'DIANTOUADI',
+  tagline:   "Experiences web immersives a la croisee du design, de la 3D et de l'ingenierie logicielle.",
+  roles: [
+    'Developpeur Full-Stack',
+    'Architecte Cloud',
+    'Passionne 3D & WebGL',
+    'Creative Developer',
+  ],
+  stats: [
+    { label: 'ANS XP',   value: 3,  order: 0 },
+    { label: 'PROJETS',  value: 20, order: 1 },
+    { label: 'TECHNOS',  value: 12, order: 2 },
+  ],
+
+  // About
   title: 'Qui suis-je ?',
   bio:
     "Developpeur passionne par la convergence du **design**, de la **3D** et de l'**ingenierie logicielle**. " +
     "Je construis des interfaces qui marquent — entre rigueur technique et imagination visuelle.",
+  cvUrl: '',
+  cvFilename: '',
   timeline: [
     { year: '2021', title: 'Premiere ligne de code',  description: 'Decouverte du HTML/CSS via un site perso.', order: 0 },
     { year: '2022', title: 'Plongee dans React',      description: 'Premieres applications web interactives.',  order: 1 },
@@ -30,23 +51,23 @@ const DEFAULT_ABOUT = {
 export class AboutService {
   constructor(@InjectModel(About.name) private model: Model<About>) {}
 
-  async get(): Promise<About> {
+  async get(): Promise<any> {
     let doc = await this.model.findOne({ kind: 'default' }).lean();
     if (!doc) {
-      // Lazily create the singleton on first read so the API always returns something.
-      doc = await this.model.create(DEFAULT_ABOUT);
-      // Re-fetch as lean for consistent return type
-      return (await this.model.findOne({ kind: 'default' }).lean()) as any;
+      await this.model.create(DEFAULT_ABOUT);
+      doc = await this.model.findOne({ kind: 'default' }).lean();
     }
-    return doc as any;
+    // Backfill missing fields with defaults — preserves forward-compat for existing records
+    // created before Hero fields were added.
+    return { ...DEFAULT_ABOUT, ...doc };
   }
 
-  async update(dto: UpdateAboutDto): Promise<About> {
+  async update(dto: UpdateAboutDto): Promise<any> {
     const updated = await this.model.findOneAndUpdate(
       { kind: 'default' },
       { $set: dto },
       { new: true, upsert: true, setDefaultsOnInsert: true },
     ).lean();
-    return updated as any;
+    return { ...DEFAULT_ABOUT, ...updated };
   }
 }

@@ -19,21 +19,39 @@ export class ValueEntry {
 }
 export const ValueEntrySchema = SchemaFactory.createForClass(ValueEntry);
 
+@Schema({ _id: false })
+export class HeroStat {
+  @Prop({ required: true }) label: string;
+  @Prop({ required: true, default: 0 }) value: number;
+  @Prop({ default: 0 }) order: number;
+}
+export const HeroStatSchema = SchemaFactory.createForClass(HeroStat);
+
 @Schema({ timestamps: true })
 export class About extends Document {
-  // Singleton flag — only one document of kind="default" exists.
   @Prop({ default: 'default', unique: true, index: true })
   kind: string;
 
-  // Bio prose. Wrap words with **double asterisks** to highlight them in gold on the frontend.
-  @Prop({ default: '' }) bio: string;
+  // ─── Hero section ──────────────────────────────────────────────────
+  @Prop({ default: '' }) firstName: string;
+  @Prop({ default: '' }) lastName:  string;
 
-  // Question shown above the bio (Title of the About section)
+  // Roles cyclés dans l'animation typewriter (one per line in admin)
+  @Prop({ type: [String], default: [] }) roles: string[];
+
+  // Punchline shown below the name on the home page
+  @Prop({ default: '' }) tagline: string;
+
+  // Animated counter cards. e.g. [{ label: 'ANS XP', value: 3 }, …]
+  @Prop({ type: [HeroStatSchema], default: [] }) stats: HeroStat[];
+
+  // ─── About section ─────────────────────────────────────────────────
   @Prop({ default: 'Qui suis-je ?' }) title: string;
 
-  // CV download — path returned by /uploads/document
+  // Bio prose. Wrap words with **double asterisks** to highlight them in gold.
+  @Prop({ default: '' }) bio: string;
+
   @Prop({ default: '' }) cvUrl: string;
-  // Original filename, used for the download attribute
   @Prop({ default: '' }) cvFilename: string;
 
   @Prop({ type: [TimelineEntrySchema], default: [] }) timeline: TimelineEntry[];
