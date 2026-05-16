@@ -48,8 +48,18 @@ export interface ValueEntry {
   description?: string;
   order?: number;
 }
+export interface HeroStat {
+  label: string;
+  value: number;
+  order?: number;
+}
 export interface About extends Partial<Timestamped> {
   _id?: ID;
+  firstName?: string;
+  lastName?: string;
+  roles?: string[];
+  tagline?: string;
+  stats?: HeroStat[];
   title?: string;
   bio?: string;
   cvUrl?: string;
