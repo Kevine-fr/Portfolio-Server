@@ -42,8 +42,17 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
       {/* ─── Main area ────────────────────────────────────────────────── */}
       <div className="flex flex-1 flex-col min-w-0">
-        {/* Topbar */}
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b bg-background/80 px-4 backdrop-blur-md md:px-6">
+        {/* Topbar — adapts to PWA standalone safe area on top */}
+        <header
+          className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b bg-background/80 px-4 backdrop-blur-md md:px-6"
+          style={{
+            // height = 4rem (h-16) + safe-area top, content padded down
+            paddingTop:    'env(safe-area-inset-top, 0px)',
+            paddingLeft:   'calc(1rem + env(safe-area-inset-left, 0px))',
+            paddingRight:  'calc(1rem + env(safe-area-inset-right, 0px))',
+            minHeight:     'calc(4rem + env(safe-area-inset-top, 0px))',
+          }}
+        >
           {/* Mobile burger */}
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
@@ -66,7 +75,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-4 md:p-6 lg:p-8 animate-fade-in">
+        <main
+          className="flex-1 p-4 md:p-6 lg:p-8 animate-fade-in"
+          style={{
+            paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
+            paddingLeft:   'calc(1rem + env(safe-area-inset-left, 0px))',
+            paddingRight:  'calc(1rem + env(safe-area-inset-right, 0px))',
+          }}
+        >
           <div className="mx-auto max-w-7xl">{children}</div>
         </main>
       </div>
