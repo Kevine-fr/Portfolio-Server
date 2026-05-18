@@ -34,8 +34,8 @@ services:
 
   # ─── NestJS API ─────────────────────────────────────────────────────────
   backend:
-    image: ${DOCKERHUB_NAMESPACE}/portfolio-backend:${IMAGE_TAG}
-    container_name: portfolio_backend
+    image: ${DOCKERHUB_NAMESPACE}/portfolio-api:${IMAGE_TAG}
+    container_name: portfolio-api
     restart: always
     depends_on:
       mongo:
