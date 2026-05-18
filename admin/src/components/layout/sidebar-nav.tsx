@@ -27,9 +27,18 @@ export function SidebarNav({ onNavigate }: Props) {
   const unread = unreadData?.count ?? 0;
 
   return (
-    <div className="flex h-full flex-col">
+    <div
+      className="flex h-full flex-col"
+      style={{
+        // En PWA standalone, le sidebar (desktop) ET le drawer mobile partagent
+        // ce composant. Les insets safe-area l'empechent d'etre masque par la
+        // status bar ou le home indicator.
+        paddingTop:    'env(safe-area-inset-top, 0px)',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      }}
+    >
       {/* Brand */}
-      <div className="flex h-16 items-center gap-2 border-b px-6">
+      <div className="flex h-16 items-center gap-2 border-b px-6 shrink-0">
         <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
           <Sparkle className="h-4 w-4" />
         </div>
