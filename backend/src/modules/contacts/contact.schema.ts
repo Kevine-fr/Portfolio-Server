@@ -13,6 +13,9 @@ export class Contact {
   @Prop({ default: false }) archived: boolean;
   @Prop() ip: string;
   @Prop() userAgent: string;
+  
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export const ContactSchema = SchemaFactory.createForClass(Contact);
