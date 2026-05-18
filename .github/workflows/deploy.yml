@@ -60,6 +60,13 @@ jobs:
           JWT_SECRET=${{ secrets.JWT_SECRET }}
           ADMIN_BOOTSTRAP_EMAIL=${{ secrets.ADMIN_BOOTSTRAP_EMAIL }}
           ADMIN_BOOTSTRAP_PASSWORD=${{ secrets.ADMIN_BOOTSTRAP_PASSWORD }}
+          SMTP_HOST=${{ secrets.SMTP_HOST }}
+          SMTP_PORT=${{ secrets.SMTP_PORT }}
+          SMTP_SECURE=false
+          SMTP_USER=${{ secrets.SMTP_USER }}
+          SMTP_PASS=${{ secrets.SMTP_PASS }}
+          SMTP_FROM=${{ secrets.SMTP_FROM }}
+          CONTACT_NOTIFY_TO=${{ secrets.CONTACT_NOTIFY_TO }}
           ENVEOF
           chmod 600 .env
 

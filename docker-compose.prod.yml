@@ -17,9 +17,9 @@ services:
   # ─── MongoDB (internal only) ────────────────────────────────────────────
   mongo:
     image: mongo:7
-    container_name: portfolio-mongo
+    container_name: portfolio_mongo
     restart: always
-    command: ["--bind_ip", "0.0.0.0", "--quiet"] 
+    command: ["--bind_ip", "0.0.0.0", "--quiet"]
     volumes:
       - mongo_data:/data/db
       - mongo_config:/data/configdb
@@ -34,8 +34,8 @@ services:
 
   # ─── NestJS API ─────────────────────────────────────────────────────────
   backend:
-    image: ${DOCKERHUB_NAMESPACE}/portfolio-api:${IMAGE_TAG}
-    container_name: portfolio-api
+    image: ${DOCKERHUB_NAMESPACE}/portfolio-backend:${IMAGE_TAG}
+    container_name: portfolio_backend
     restart: always
     depends_on:
       mongo:
@@ -50,6 +50,16 @@ services:
       ADMIN_BOOTSTRAP_EMAIL: ${ADMIN_BOOTSTRAP_EMAIL}
       ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD}
       UPLOAD_DIR: /app/uploads
+      # SMTP (notifications email a la reception d'un message de contact)
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      CONTACT_NOTIFY_TO: ${CONTACT_NOTIFY_TO:-}
+      # Reutilise pour generer le lien "Ouvrir l'admin" dans les emails
+      ADMIN_DOMAIN: ${ADMIN_DOMAIN}
     volumes:
       - backend_uploads:/app/uploads
     expose:
@@ -61,19 +71,19 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=web"
       # HTTPS router
-      - "traefik.http.routers.portfolio-api.rule=Host(`${API_DOMAIN}`)"
-      - "traefik.http.routers.portfolio-api.entrypoints=websecure"
-      - "traefik.http.routers.portfolio-api.tls=true"
-      - "traefik.http.routers.portfolio-api.tls.certresolver=${CERT_RESOLVER}"
-      - "traefik.http.services.portfolio-api.loadbalancer.server.port=3001"
+      - "traefik.http.routers.portfolio-backend.rule=Host(`${API_DOMAIN}`)"
+      - "traefik.http.routers.portfolio-backend.entrypoints=websecure"
+      - "traefik.http.routers.portfolio-backend.tls=true"
+      - "traefik.http.routers.portfolio-backend.tls.certresolver=${CERT_RESOLVER}"
+      - "traefik.http.services.portfolio-backend.loadbalancer.server.port=3001"
       # Body size limit for uploads (100 MB videos)
-      - "traefik.http.middlewares.portfolio-api-bodylimit.buffering.maxRequestBodyBytes=104857600"
-      - "traefik.http.routers.portfolio-api.middlewares=portfolio-api-bodylimit"
+      - "traefik.http.middlewares.portfolio-backend-bodylimit.buffering.maxRequestBodyBytes=104857600"
+      - "traefik.http.routers.portfolio-backend.middlewares=portfolio-backend-bodylimit"
 
   # ─── Next.js admin ──────────────────────────────────────────────────────
   admin:
     image: ${DOCKERHUB_NAMESPACE}/portfolio-admin:${IMAGE_TAG}
-    container_name: portfolio-admin
+    container_name: portfolio_admin
     restart: always
     depends_on:
       - backend
