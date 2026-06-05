@@ -17,7 +17,7 @@ services:
   # ─── MongoDB (internal only) ────────────────────────────────────────────
   mongo:
     image: mongo:7
-    container_name: portfolio_mongo
+    container_name: portfolio-mongo
     restart: always
     command: ["--bind_ip", "0.0.0.0", "--quiet"]
     volumes:
@@ -83,7 +83,7 @@ services:
   # ─── Next.js admin ──────────────────────────────────────────────────────
   admin:
     image: ${DOCKERHUB_NAMESPACE}/portfolio-admin:${IMAGE_TAG}
-    container_name: portfolio_admin
+    container_name: portfolio-admin
     restart: always
     depends_on:
       - backend
