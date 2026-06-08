@@ -16,10 +16,20 @@ import { MailModule } from './mail/mail.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { HealthController } from './health.controller';
+import {
+  PrometheusModule,
+  makeHistogramProvider,
+} from '@willsoto/nestjs-prometheus';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { MetricsInterceptor } from './metrics/metrics.interceptor';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    // Expose /metrics (préfixe global -> GET /api/v1/metrics) + métriques Node par défaut.
+    PrometheusModule.register({
+      defaultMetrics: { enabled: true },
+    }),
     ServeStaticModule.forRoot({
       rootPath: process.env.UPLOAD_DIR || join(process.cwd(), 'uploads'),
       serveRoot: '/uploads',
@@ -40,5 +50,17 @@ import { HealthController } from './health.controller';
     MailModule,
   ],
   controllers: [HealthController],
+  providers: [
+    makeHistogramProvider({
+      name: 'http_request_duration_seconds',
+      help: 'Durée des requêtes HTTP en secondes',
+      labelNames: ['method', 'route', 'status_code'],
+      buckets: [0.05, 0.1, 0.3, 0.5, 1, 2, 5],
+    }),
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: MetricsInterceptor,
+    },
+  ],
 })
 export class AppModule {}
