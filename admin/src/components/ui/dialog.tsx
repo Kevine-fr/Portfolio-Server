@@ -43,8 +43,8 @@ export const DialogContent = React.forwardRef<
         'data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%]',
         'data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]',
         'sm:rounded-lg',
-        // mobile full-screen feel
-        'max-h-[calc(100vh-2rem)] overflow-y-auto',
+        // mobile full-screen feel — borne la hauteur dans la zone sûre (PWA : encoche / status bar)
+        'max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-2rem)] overflow-y-auto',
         className,
       )}
       {...props}
