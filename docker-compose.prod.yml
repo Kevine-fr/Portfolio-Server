@@ -12,6 +12,16 @@
 #   JWT_SECRET
 #   ADMIN_BOOTSTRAP_EMAIL
 #   ADMIN_BOOTSTRAP_PASSWORD
+#
+# Resource caps (shared VPS, 8 vCPU / 24 GB) — see CAPACITY.md in the
+# Infrastructure repo. mem_limit is a safety ceiling, not a reservation;
+# cpu_shares only matters under contention (1024 = production traffic).
+
+x-logging: &logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
 
 services:
   # ─── MongoDB (internal only) ────────────────────────────────────────────
@@ -29,8 +39,41 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+    # WiredTiger sizes its cache from the cgroup limit: without a limit it
+    # would claim ~11 GB (half of the host's RAM) on this shared VPS.
+    mem_limit: 1g
+    cpus: 1.5
+    cpu_shares: 1024
+    logging: *logging
     networks:
       - portfolio_net
+
+  # ─── Prometheus exporter for MongoDB ────────────────────────────────────
+  # Lives here rather than in the Infrastructure stack so that portfolio-mongo
+  # can stay on its private network (it has no auth): only the exporter is
+  # exposed on the shared "web" network, and it only serves metrics.
+  # The container name is the one prometheus.yml scrapes (job "mongodb").
+  mongodb-exporter:
+    image: percona/mongodb_exporter:0.40
+    container_name: mongodb-exporter-portfolio
+    restart: always
+    command:
+      - '--mongodb.uri=mongodb://mongo:27017'
+      - '--collect-all'
+      # Noms de metriques lisibles (mongodb_connections, mongodb_opcounters_total…)
+      - '--compatible-mode'
+    expose:
+      - "9216"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    mem_limit: 128m
+    cpus: 0.2
+    cpu_shares: 256
+    logging: *logging
+    networks:
+      - portfolio_net
+      - web
 
   # ─── NestJS API ─────────────────────────────────────────────────────────
   backend:
@@ -64,6 +107,10 @@ services:
       - backend_uploads:/app/uploads
     expose:
       - "3001"
+    mem_limit: 640m
+    cpus: 1.5
+    cpu_shares: 1024
+    logging: *logging
     networks:
       - portfolio_net
       - web
@@ -92,6 +139,10 @@ services:
       PORT: 3000
     expose:
       - "3000"
+    mem_limit: 640m
+    cpus: 1
+    cpu_shares: 1024
+    logging: *logging
     networks:
       - web
     labels:
