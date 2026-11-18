@@ -5,14 +5,18 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { UsersModule } from '../modules/users/users.module';
+import { getJwtSecret } from './jwt-secret';
 
 @Module({
   imports: [
     UsersModule,
     PassportModule,
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'dev_secret',
-      signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '7d' },
+    // Async so the secret is read once ConfigModule has loaded .env
+    JwtModule.registerAsync({
+      useFactory: () => ({
+        secret: getJwtSecret(),
+        signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '7d' },
+      }),
     }),
   ],
   controllers: [AuthController],

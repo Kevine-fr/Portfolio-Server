@@ -67,6 +67,8 @@ jobs:
           SMTP_PASS=${{ secrets.SMTP_PASS }}
           SMTP_FROM=${{ secrets.SMTP_FROM }}
           CONTACT_NOTIFY_TO=${{ secrets.CONTACT_NOTIFY_TO }}
+          GITHUB_USERNAME=${{ secrets.PORTFOLIO_GITHUB_USERNAME }}
+          GITHUB_TOKEN=${{ secrets.PORTFOLIO_GITHUB_TOKEN }}
           ENVEOF
           chmod 600 .env
 

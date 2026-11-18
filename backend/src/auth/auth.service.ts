@@ -12,9 +12,11 @@ export class AuthService {
 
   async validateUser(email: string, password: string) {
     const user = await this.usersService.findByEmailWithPassword(email);
-    if (!user) throw new UnauthorizedException('Invalid credentials');
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) throw new UnauthorizedException('Invalid credentials');
+    // Same message whatever failed, to avoid account enumeration
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      throw new UnauthorizedException('Identifiants invalides');
+    }
+    if (user.isActive === false) throw new UnauthorizedException('Compte désactivé');
     return user;
   }
 

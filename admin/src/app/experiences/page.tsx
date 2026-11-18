@@ -16,8 +16,9 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { ExperienceForm } from '@/components/forms/experience-form';
+import { SourceBadge } from '@/components/ui/source-badge';
 
-const fmtDate = (d?: string) =>
+const fmtDate = (d?: string | null) =>
   d ? format(new Date(d), 'MMM yyyy', { locale: fr }) : '';
 
 export default function ExperiencesPage() {
@@ -65,7 +66,7 @@ export default function ExperiencesPage() {
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0 flex-1 space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-semibold">{x.title}</h3>
+                      <h3 className="flex flex-wrap items-center gap-2 font-semibold">{x.title} <SourceBadge source={x.source} /></h3>
                       {x.current && <Badge variant="success">En cours</Badge>}
                     </div>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
@@ -112,7 +113,7 @@ export default function ExperiencesPage() {
             <DialogTitle>Nouvelle expérience</DialogTitle>
             <DialogDescription>Ajoutez une expérience professionnelle.</DialogDescription>
           </DialogHeader>
-          <ExperienceForm submitting={createMut.isPending} onSubmit={(p) => createMut.mutateAsync(p)} onCancel={() => setCreating(false)} />
+          <ExperienceForm submitting={createMut.isPending} onSubmit={(p) => createMut.mutateAsync(p).catch(() => undefined)} onCancel={() => setCreating(false)} />
         </DialogContent>
       </Dialog>
 
@@ -124,7 +125,7 @@ export default function ExperiencesPage() {
           </DialogHeader>
           {editing && (
             <ExperienceForm defaultValues={editing} submitting={updateMut.isPending}
-              onSubmit={(p) => updateMut.mutateAsync({ id: editing._id, payload: p })}
+              onSubmit={(p) => updateMut.mutateAsync({ id: editing._id, payload: p }).catch(() => undefined)}
               onCancel={() => setEditing(null)} />
           )}
         </DialogContent>

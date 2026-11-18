@@ -22,6 +22,10 @@ const schema = z.object({
 
 type Values = z.infer<typeof schema>;
 
+export function buildEducationPayload(raw: Values) {
+  return { ...raw, endDate: raw.endDate || null };
+}
+
 export function EducationForm({
   defaultValues, onSubmit, submitting, onCancel,
 }: {
@@ -44,7 +48,7 @@ export function EducationForm({
     },
   });
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit((raw) => onSubmit(buildEducationPayload(raw)))} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField label="Établissement" required error={errors.school?.message}>
           <Input {...register('school')} />

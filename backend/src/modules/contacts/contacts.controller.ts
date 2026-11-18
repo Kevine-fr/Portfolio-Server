@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
-import { Throttle } from '@nestjs/throttler';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { ContactsService } from './contacts.service';
@@ -10,7 +10,9 @@ import { CreateContactDto, UpdateContactDto } from './contact.dto';
 export class ContactsController {
   constructor(private readonly contacts: ContactsService) {}
 
-  // Public — rate-limited to mitigate spam (5/minute per IP)
+  // Public — rate-limited to mitigate spam (5/minute per IP).
+  // The guard is required: @Throttle alone was a no-op (no ThrottlerGuard was registered).
+  @UseGuards(ThrottlerGuard)
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post()
   create(@Body() dto: CreateContactDto, @Req() req: any) {
@@ -21,7 +23,7 @@ export class ContactsController {
   }
 
   @UseGuards(JwtAuthGuard) @ApiBearerAuth() @Get()
-  findAll(@Query() q: any) { return this.contacts.findAll(q); }
+  findAll(@Query() q: { read?: string; archived?: string }) { return this.contacts.findAll(q); }
 
   @UseGuards(JwtAuthGuard) @ApiBearerAuth() @Get('unread-count')
   unreadCount() { return this.contacts.countUnread().then((count) => ({ count })); }

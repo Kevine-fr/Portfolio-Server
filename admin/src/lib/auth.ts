@@ -16,16 +16,29 @@ type AuthState = {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  hydrate: () => Promise<void>;
+  /** Validates the session with GET /auth/me (once per page load, shared by all callers). */
+  hydrate: (opts?: { force?: boolean }) => Promise<void>;
 };
 
+const TOKEN_COOKIE = 'portfolio_token';
+
+export function getTokenCookie(): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(new RegExp(`(?:^|; )${TOKEN_COOKIE}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : null;
+}
 function setTokenCookie(token: string) {
   const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
-  document.cookie = `portfolio_token=${encodeURIComponent(token)}; path=/; max-age=${7 * 24 * 3600}; SameSite=Lax${isSecure ? '; Secure' : ''}`;
+  document.cookie = `${TOKEN_COOKIE}=${encodeURIComponent(token)}; path=/; max-age=${7 * 24 * 3600}; SameSite=Lax${isSecure ? '; Secure' : ''}`;
 }
-function clearTokenCookie() {
-  document.cookie = 'portfolio_token=; path=/; max-age=0';
+export function clearTokenCookie() {
+  document.cookie = `${TOKEN_COOKIE}=; path=/; max-age=0`;
 }
+
+// Every admin page used to call GET /auth/me on each navigation: the session
+// is now validated once and the result shared (401s are still handled by the
+// axios interceptor, which logs out on an expired token).
+let hydration: Promise<void> | null = null;
 
 export const useAuth = create<AuthState>()(
   persist(
@@ -37,6 +50,7 @@ export const useAuth = create<AuthState>()(
         try {
           const data = await apiPost<LoginResponse>('/auth/login', { email, password });
           setTokenCookie(data.accessToken);
+          hydration = Promise.resolve();
           set({ user: data.user, isLoading: false });
         } catch (err) {
           set({ isLoading: false });
@@ -45,18 +59,32 @@ export const useAuth = create<AuthState>()(
       },
       logout: () => {
         clearTokenCookie();
+        hydration = null;
         set({ user: null });
       },
-      hydrate: async () => {
-        try {
-          const user = await apiGet<AuthUser>('/auth/me');
-          set({ user });
-        } catch {
-          clearTokenCookie();
-          set({ user: null });
-        }
+      hydrate: (opts) => {
+        if (hydration && !opts?.force) return hydration;
+        hydration = (async () => {
+          if (!getTokenCookie()) {
+            set({ user: null });
+            return;
+          }
+          try {
+            const user = await apiGet<AuthUser>('/auth/me');
+            set({ user });
+          } catch {
+            clearTokenCookie();
+            set({ user: null });
+          }
+        })();
+        return hydration;
       },
     }),
     { name: 'portfolio-admin-auth', partialize: (s) => ({ user: s.user }) },
   ),
 );
+
+/** Test helper: forget the cached session check. */
+export function resetAuthHydration() {
+  hydration = null;
+}

@@ -95,7 +95,8 @@ export default function TagsPage() {
                   <span className="text-xs text-muted-foreground">{t.slug}</span>
                   <button
                     onClick={() => setToDelete(t)}
-                    className="ml-1 rounded-sm text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+                    aria-label={`Supprimer ${t.name}`}
+                    className="ml-1 rounded-sm text-muted-foreground transition-opacity hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>

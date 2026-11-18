@@ -47,7 +47,10 @@ const ALLOWED_DOC_MIMES = new Set([
   'application/pdf',
   'application/msword',                                                           // .doc
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',      // .docx
+  'application/vnd.oasis.opendocument.text',                                      // .odt (already allowed by SAFE_EXT)
 ]);
+// Deletable names: plain files only (no hidden files such as .gitkeep)
+export const UPLOADED_NAME = /^[^.\/\\][^\/\\]*$/;
 const SAFE_EXT = /^\.(jpe?g|png|webp|gif|avif|heic|heif|mp4|webm|ogv|mov|m4v|mkv|avi|pdf|docx?|odt)$/i;
 
 const storage = diskStorage({
@@ -152,8 +155,9 @@ export class UploadsController {
 
   @Delete(':filename')
   deleteFile(@Param('filename') filename: string) {
-    // Prevent path traversal: keep basename only
+    // Prevent path traversal: keep basename only, never hidden files
     const safe = basename(filename);
+    if (!UPLOADED_NAME.test(safe)) throw new BadRequestException('Nom de fichier invalide');
     const filepath = join(UPLOAD_DIR, safe);
     if (!existsSync(filepath)) throw new NotFoundException('Fichier introuvable');
     unlinkSync(filepath);

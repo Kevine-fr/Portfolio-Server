@@ -7,21 +7,24 @@ import { CreateExperienceDto, UpdateExperienceDto } from './experience.dto';
 @Injectable()
 export class ExperiencesService {
   constructor(@InjectModel(Experience.name) private model: Model<ExperienceDocument>) {}
-  findAll() { return this.model.find().sort({ order: 1, startDate: -1 }).exec(); }
+  findAll() { return this.model.find().sort({ order: 1, startDate: -1 }).lean().exec(); }
   async findOne(id: string) {
-    const x = await this.model.findById(id).exec();
-    if (!x) throw new NotFoundException();
+    const x = await this.model.findById(id).lean().exec();
+    if (!x) throw new NotFoundException('Expérience introuvable');
     return x;
   }
-  create(dto: CreateExperienceDto) { return this.model.create(dto); }
+  create(dto: CreateExperienceDto) {
+    return this.model.create(dto.current ? { ...dto, endDate: null } : dto);
+  }
   async update(id: string, dto: UpdateExperienceDto) {
-    const x = await this.model.findByIdAndUpdate(id, dto, { new: true }).exec();
-    if (!x) throw new NotFoundException();
+    const data = dto.current ? { ...dto, endDate: null } : dto;
+    const x = await this.model.findByIdAndUpdate(id, data, { new: true, runValidators: true }).lean().exec();
+    if (!x) throw new NotFoundException('Expérience introuvable');
     return x;
   }
   async remove(id: string) {
     const x = await this.model.findByIdAndDelete(id).exec();
-    if (!x) throw new NotFoundException();
+    if (!x) throw new NotFoundException('Expérience introuvable');
     return { deleted: true };
   }
 }

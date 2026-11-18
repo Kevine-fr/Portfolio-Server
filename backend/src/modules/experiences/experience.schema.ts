@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
+import { CONTENT_SOURCES } from '../../common/source';
 
 export type ExperienceDocument = Experience & Document;
 
@@ -15,6 +16,8 @@ export class Experience {
   @Prop({ default: [] }) achievements: string[];
   @Prop({ default: [] }) techStack: string[];
   @Prop({ default: 0 }) order: number;
+  @Prop({ default: 'manual', enum: CONTENT_SOURCES }) source: string;
+  @Prop() sourceKey: string;
 }
 
 export const ExperienceSchema = SchemaFactory.createForClass(Experience);

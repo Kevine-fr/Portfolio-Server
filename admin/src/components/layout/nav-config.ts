@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, FolderKanban, Sparkles, Briefcase,
-  GraduationCap, Tags, Inbox, Users, UserCircle,
+  GraduationCap, Tags, Inbox, Users, UserCircle, Github,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -20,5 +20,6 @@ export const NAV_ITEMS: NavItem[] = [
   { href: '/education',   label: 'Formation',       icon: GraduationCap },
   { href: '/tags',        label: 'Étiquettes',      icon: Tags },
   { href: '/contacts',    label: 'Messages',        icon: Inbox },
+  { href: '/github',      label: 'GitHub',          icon: Github },
   { href: '/users',       label: 'Utilisateurs',    icon: Users, adminOnly: true },
 ];

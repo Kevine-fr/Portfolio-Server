@@ -3,21 +3,21 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-class TimelineEntryDto {
+export class TimelineEntryDto {
   @IsString()             year: string;
   @IsString()             title: string;
   @IsOptional() @IsString() description?: string;
   @IsOptional() @IsInt()    order?: number;
 }
 
-class ValueEntryDto {
+export class ValueEntryDto {
   @IsString()             icon: string;
   @IsString()             title: string;
   @IsOptional() @IsString() description?: string;
   @IsOptional() @IsInt()    order?: number;
 }
 
-class HeroStatDto {
+export class HeroStatDto {
   @IsString()             label: string;
   @IsNumber()             value: number;
   @IsOptional() @IsInt()    order?: number;

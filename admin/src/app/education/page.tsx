@@ -15,8 +15,9 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EducationForm } from '@/components/forms/education-form';
+import { SourceBadge } from '@/components/ui/source-badge';
 
-const fmtDate = (d?: string) => d ? format(new Date(d), 'MMM yyyy', { locale: fr }) : 'présent';
+const fmtDate = (d?: string | null) => d ? format(new Date(d), 'MMM yyyy', { locale: fr }) : 'présent';
 
 export default function EducationPage() {
   const qc = useQueryClient();
@@ -59,7 +60,7 @@ export default function EducationPage() {
               <CardContent className="p-5">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0 flex-1 space-y-1.5">
-                    <h3 className="font-semibold">{e.degree}{e.field ? ` · ${e.field}` : ''}</h3>
+                    <h3 className="flex flex-wrap items-center gap-2 font-semibold">{e.degree}{e.field ? ` · ${e.field}` : ''} <SourceBadge source={e.source} /></h3>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
                       <span className="font-medium text-foreground">{e.school}</span>
                       {e.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {e.location}</span>}
@@ -84,7 +85,7 @@ export default function EducationPage() {
             <DialogTitle>Nouvelle formation</DialogTitle>
             <DialogDescription>Ajoutez une formation à votre parcours.</DialogDescription>
           </DialogHeader>
-          <EducationForm submitting={createMut.isPending} onSubmit={(p) => createMut.mutateAsync(p)} onCancel={() => setCreating(false)} />
+          <EducationForm submitting={createMut.isPending} onSubmit={(p) => createMut.mutateAsync(p).catch(() => undefined)} onCancel={() => setCreating(false)} />
         </DialogContent>
       </Dialog>
 
@@ -96,7 +97,7 @@ export default function EducationPage() {
           </DialogHeader>
           {editing && (
             <EducationForm defaultValues={editing} submitting={updateMut.isPending}
-              onSubmit={(p) => updateMut.mutateAsync({ id: editing._id, payload: p })}
+              onSubmit={(p) => updateMut.mutateAsync({ id: editing._id, payload: p }).catch(() => undefined)}
               onCancel={() => setEditing(null)} />
           )}
         </DialogContent>

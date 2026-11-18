@@ -161,7 +161,7 @@ export default function UsersPage() {
             <DialogTitle>Nouvel utilisateur</DialogTitle>
             <DialogDescription>Créez un nouvel administrateur ou éditeur.</DialogDescription>
           </DialogHeader>
-          <UserForm submitting={createMut.isPending} onSubmit={(p) => createMut.mutateAsync(p)} onCancel={() => setCreating(false)} />
+          <UserForm submitting={createMut.isPending} onSubmit={(p) => createMut.mutateAsync(p).catch(() => undefined)} onCancel={() => setCreating(false)} />
         </DialogContent>
       </Dialog>
 
@@ -173,7 +173,7 @@ export default function UsersPage() {
           </DialogHeader>
           {editing && (
             <UserForm isEdit defaultValues={editing} submitting={updateMut.isPending}
-              onSubmit={(p) => updateMut.mutateAsync({ id: editing._id, payload: p })}
+              onSubmit={(p) => updateMut.mutateAsync({ id: editing._id, payload: p }).catch(() => undefined)}
               onCancel={() => setEditing(null)} />
           )}
         </DialogContent>

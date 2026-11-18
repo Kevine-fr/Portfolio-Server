@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { SkillForm } from '@/components/forms/skill-form';
+import { SourceBadge } from '@/components/ui/source-badge';
 
 const CATEGORY_LABELS: Record<SkillCategory, string> = {
   frontend: 'Frontend', backend: 'Backend', tools: 'Outils', design: 'Design', other: 'Autre',
@@ -85,6 +86,7 @@ export default function SkillsPage() {
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium truncate">{s.name}</span>
                             {!s.visible && <EyeOff className="h-3 w-3 text-muted-foreground shrink-0" />}
+                            <SourceBadge source={s.source} className="h-4 px-1" />
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary">
@@ -93,7 +95,7 @@ export default function SkillsPage() {
                             <span className="text-xs text-muted-foreground tabular-nums w-9 text-right">{s.level}%</span>
                           </div>
                         </div>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex gap-1 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
                           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditing(s)}>
                             <Pencil className="h-3 w-3" />
                           </Button>
@@ -117,7 +119,7 @@ export default function SkillsPage() {
             <DialogTitle>Nouvelle compétence</DialogTitle>
             <DialogDescription>Ajoutez une nouvelle compétence.</DialogDescription>
           </DialogHeader>
-          <SkillForm submitting={createMut.isPending} onSubmit={(p) => createMut.mutateAsync(p)} onCancel={() => setCreating(false)} />
+          <SkillForm submitting={createMut.isPending} onSubmit={(p) => createMut.mutateAsync(p).catch(() => undefined)} onCancel={() => setCreating(false)} />
         </DialogContent>
       </Dialog>
 
@@ -129,7 +131,7 @@ export default function SkillsPage() {
           </DialogHeader>
           {editing && (
             <SkillForm defaultValues={editing} submitting={updateMut.isPending}
-              onSubmit={(p) => updateMut.mutateAsync({ id: editing._id, payload: p })}
+              onSubmit={(p) => updateMut.mutateAsync({ id: editing._id, payload: p }).catch(() => undefined)}
               onCancel={() => setEditing(null)} />
           )}
         </DialogContent>
