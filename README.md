@@ -396,3 +396,12 @@ ssh kevine@vps "cd ~/deploy/Portfolio-Admin && \
   docker compose -f docker-compose.prod.yml pull && \
   docker compose -f docker-compose.prod.yml up -d"
 ```
+
+---
+
+## Tests, métriques et sauvegardes
+
+- Tests : `cd backend && npx jest` (+ `MONGO_URI_TEST` pour l'intégration), `cd admin && npm test`, `bash tests/sauvegarde.test.sh`. La CI (`ci.yml`) les relance sur chaque PR.
+- **Métriques Prometheus** : `GET /api/v1/metrics` (API : `http_requests_total`, `http_request_duration_seconds` par route) et `GET /api/metrics` (admin).
+- **Sauvegarde** : `./scripts/backup.sh` (mongodump + médias, une archive) ; `./scripts/restore.sh <archive>`. Les envois automatiques vers MinIO sont faits par le dépôt Infrastructure.
+- Conventions de travail : `CLAUDE.md`.
