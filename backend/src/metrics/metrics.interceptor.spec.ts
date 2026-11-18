@@ -5,7 +5,8 @@ import { MetricsInterceptor } from './metrics.interceptor';
 function setup() {
   const stop = jest.fn();
   const histogram = { startTimer: jest.fn(() => stop) } as any;
-  const interceptor = new MetricsInterceptor(histogram);
+  const counter = { inc: jest.fn() } as any;
+  const interceptor = new MetricsInterceptor(histogram, counter);
   const ctx: any = {
     getType: () => 'http',
     switchToHttp: () => ({
@@ -13,7 +14,7 @@ function setup() {
       getResponse: () => ({ statusCode: 200 }),
     }),
   };
-  return { stop, interceptor, ctx };
+  return { stop, counter, interceptor, ctx };
 }
 
 describe('MetricsInterceptor', () => {
@@ -21,6 +22,12 @@ describe('MetricsInterceptor', () => {
     const { stop, interceptor, ctx } = setup();
     await lastValueFrom(interceptor.intercept(ctx, { handle: () => of('ok') }));
     expect(stop).toHaveBeenCalledWith({ method: 'GET', route: '/api/v1/projects/:id', status_code: 200 });
+  });
+
+  it('counts each request in http_requests_total with the same labels', async () => {
+    const { counter, interceptor, ctx } = setup();
+    await lastValueFrom(interceptor.intercept(ctx, { handle: () => of('ok') }));
+    expect(counter.inc).toHaveBeenCalledWith({ method: 'GET', route: '/api/v1/projects/:id', status_code: 200 });
   });
 
   it('records the real status of failed requests (was always 200)', async () => {

@@ -20,6 +20,7 @@ import { HealthController } from './health.controller';
 import {
   PrometheusModule,
   makeHistogramProvider,
+  makeCounterProvider,
 } from '@willsoto/nestjs-prometheus';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { MetricsInterceptor } from './metrics/metrics.interceptor';
@@ -58,6 +59,13 @@ import { MongoExceptionFilter } from './common/mongo-exception.filter';
   ],
   controllers: [HealthController],
   providers: [
+    // Compteur aux mêmes noms et étiquettes que les autres applications Node
+    // du VPS (FindUrJob, Titi) : les tableaux Grafana se lisent pareil partout.
+    makeCounterProvider({
+      name: 'http_requests_total',
+      help: 'Requêtes HTTP traitées',
+      labelNames: ['method', 'route', 'status_code'],
+    }),
     makeHistogramProvider({
       name: 'http_request_duration_seconds',
       help: 'Durée des requêtes HTTP en secondes',

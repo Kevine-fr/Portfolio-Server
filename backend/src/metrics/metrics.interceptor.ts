@@ -5,7 +5,7 @@ import {
   NestInterceptor,
 } from '@nestjs/common';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
-import { Histogram } from 'prom-client';
+import { Counter, Histogram } from 'prom-client';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { statusFromError } from '../common/mongo-errors';
@@ -19,6 +19,8 @@ export class MetricsInterceptor implements NestInterceptor {
   constructor(
     @InjectMetric('http_request_duration_seconds')
     private readonly histogram: Histogram<string>,
+    @InjectMetric('http_requests_total')
+    private readonly counter: Counter<string>,
   ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
@@ -38,7 +40,9 @@ export class MetricsInterceptor implements NestInterceptor {
           ? req.originalUrl.split('?')[0]
           : req.url) ??
         'unknown';
-      stopTimer({ method: req.method, route, status_code: statusCode });
+      const labels = { method: req.method, route, status_code: statusCode };
+      stopTimer(labels);
+      this.counter.inc(labels);
     };
 
     return next.handle().pipe(

@@ -9,3 +9,6 @@ dist/
 coverage/
 .vscode/settings.json
 *.tsbuildinfo
+
+# Sauvegardes locales (scripts/backup.sh)
+backups/
