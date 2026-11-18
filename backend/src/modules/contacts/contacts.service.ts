@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import { Contact, ContactDocument } from './contact.schema';
 import { CreateContactDto, UpdateContactDto } from './contact.dto';
 import { MailService } from '../../mail/mail.service';
+import { parseBooleanQuery } from '../../common/transformers';
 
 function escapeHtml(s = '') {
   return s
@@ -23,16 +24,18 @@ export class ContactsService {
     private readonly mail: MailService,
   ) {}
 
-  findAll(query: any = {}) {
-    const filter: any = {};
-    if (query.read !== undefined) filter.read = query.read === 'true';
-    if (query.archived !== undefined) filter.archived = query.archived === 'true';
-    return this.model.find(filter).sort({ createdAt: -1 }).exec();
+  findAll(query: { read?: string; archived?: string } = {}) {
+    const filter: Record<string, unknown> = {};
+    const read = parseBooleanQuery(query.read);
+    const archived = parseBooleanQuery(query.archived);
+    if (read !== undefined) filter.read = read;
+    if (archived !== undefined) filter.archived = archived;
+    return this.model.find(filter).sort({ createdAt: -1 }).lean().exec();
   }
 
   async findOne(id: string) {
-    const c = await this.model.findById(id).exec();
-    if (!c) throw new NotFoundException();
+    const c = await this.model.findById(id).lean().exec();
+    if (!c) throw new NotFoundException('Message introuvable');
     return c;
   }
 
@@ -50,19 +53,19 @@ export class ContactsService {
   }
 
   async update(id: string, dto: UpdateContactDto) {
-    const c = await this.model.findByIdAndUpdate(id, dto, { new: true }).exec();
-    if (!c) throw new NotFoundException();
+    const c = await this.model.findByIdAndUpdate(id, dto, { new: true }).lean().exec();
+    if (!c) throw new NotFoundException('Message introuvable');
     return c;
   }
 
   async remove(id: string) {
     const c = await this.model.findByIdAndDelete(id).exec();
-    if (!c) throw new NotFoundException();
+    if (!c) throw new NotFoundException('Message introuvable');
     return { deleted: true };
   }
 
   countUnread() {
-    return this.model.countDocuments({ read: false, archived: false });
+    return this.model.countDocuments({ read: false, archived: false }).exec();
   }
 
   // ─── Email notification ───────────────────────────────────────────────────

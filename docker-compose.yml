@@ -45,6 +45,9 @@ services:
       ADMIN_BOOTSTRAP_EMAIL: ${ADMIN_BOOTSTRAP_EMAIL:-admin@kevinefray.dev}
       ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD:-ChangeMe!2026}
       UPLOAD_DIR: /app/uploads
+      # Synchronisation GitHub (facultatif) — voir README « Synchronisation GitHub »
+      GITHUB_USERNAME: ${GITHUB_USERNAME:-}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
     ports:
       - "3001:3001"
     volumes:
@@ -52,7 +55,7 @@ services:
       - backend_node_modules:/app/node_modules
       - backend_uploads:/app/uploads
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--spider", "http://localhost:3001/api/v1/projects"]
+      test: ["CMD", "wget", "--quiet", "--spider", "http://localhost:3001/api/v1/health"]
       interval: 15s
       timeout: 5s
       retries: 5

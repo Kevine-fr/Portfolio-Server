@@ -8,6 +8,7 @@ import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import { Histogram } from 'prom-client';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import { statusFromError } from '../common/mongo-errors';
 
 /**
  * Mesure la durée et le code de chaque requête HTTP dans l'histogramme
@@ -29,7 +30,7 @@ export class MetricsInterceptor implements NestInterceptor {
     const res = context.switchToHttp().getResponse();
     const stopTimer = this.histogram.startTimer();
 
-    const record = () => {
+    const record = (statusCode: number) => {
       // req.route?.path = modèle ("/projects/:id") -> évite l'explosion de cardinalité
       const route: string =
         req.route?.path ??
@@ -37,13 +38,16 @@ export class MetricsInterceptor implements NestInterceptor {
           ? req.originalUrl.split('?')[0]
           : req.url) ??
         'unknown';
-      stopTimer({
-        method: req.method,
-        route,
-        status_code: res.statusCode,
-      });
+      stopTimer({ method: req.method, route, status_code: statusCode });
     };
 
-    return next.handle().pipe(tap({ next: record, error: record }));
+    return next.handle().pipe(
+      tap({
+        next: () => record(res.statusCode),
+        // On error the response has not been written yet: res.statusCode is
+        // still 200, so derive the real status from the exception instead.
+        error: (err) => record(statusFromError(err)),
+      }),
+    );
   }
 }

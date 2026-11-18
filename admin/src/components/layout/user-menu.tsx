@@ -36,10 +36,14 @@ export function UserMenu() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => router.push('/users')}>
-          <UserIcon className="mr-2 h-4 w-4" /> Mon compte
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
+        {user?.role === 'admin' && (
+          <>
+            <DropdownMenuItem onClick={() => router.push('/users')}>
+              <UserIcon className="mr-2 h-4 w-4" /> Gérer les comptes
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
         <DropdownMenuItem
           className="text-destructive focus:text-destructive"
           onClick={() => { logout(); router.replace('/login'); }}

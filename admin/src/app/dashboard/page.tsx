@@ -1,13 +1,14 @@
 'use client';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {
-  FolderKanban, Sparkles, Briefcase, Inbox, ArrowRight, Mail,
+  FolderKanban, Sparkles, Briefcase, Inbox, ArrowRight, Mail, Github,
 } from 'lucide-react';
 import { apiGet } from '@/lib/api';
-import { Project, Skill, Experience, Contact } from '@/types';
+import { Project, Skill, Experience, Contact, GithubStatus } from '@/types';
+import { summarizeReport } from '@/lib/github';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -19,6 +20,8 @@ export default function DashboardPage() {
   const skills   = useQuery({ queryKey: ['skills'],      queryFn: () => apiGet<Skill[]>('/skills') });
   const exps     = useQuery({ queryKey: ['experiences'], queryFn: () => apiGet<Experience[]>('/experiences') });
   const contacts = useQuery({ queryKey: ['contacts'],    queryFn: () => apiGet<Contact[]>('/contacts') });
+  const github   = useQuery({ queryKey: ['github', 'status'], queryFn: () => apiGet<GithubStatus>('/github/status') });
+  const syncedProjects = projects.data?.filter((p) => p.source === 'github').length ?? 0;
 
   const stats = [
     {
@@ -88,6 +91,30 @@ export default function DashboardPage() {
           );
         })}
       </div>
+
+      {/* GitHub synchronisation */}
+      <Card className="mb-8">
+        <CardHeader className="flex flex-row items-start justify-between space-y-0">
+          <div className="space-y-1">
+            <CardTitle className="flex items-center gap-2 text-lg"><Github className="h-4 w-4" /> GitHub</CardTitle>
+            <CardDescription>
+              {github.isLoading ? 'Chargement…' : !github.data?.username
+                ? 'Connectez votre compte pour importer vos projets automatiquement.'
+                : github.data.lastSyncAt
+                  ? `@${github.data.username} · synchronisé ${formatDistanceToNow(new Date(github.data.lastSyncAt), { addSuffix: true, locale: fr })} · ${syncedProjects} projet${syncedProjects > 1 ? 's' : ''} synchronisé${syncedProjects > 1 ? 's' : ''}`
+                  : `@${github.data.username} · jamais synchronisé`}
+            </CardDescription>
+            {github.data?.lastSyncReport && (
+              <p className={`text-xs ${github.data.lastSyncReport.ok ? 'text-muted-foreground' : 'text-destructive'}`}>
+                {github.data.lastSyncReport.ok ? summarizeReport(github.data.lastSyncReport) : github.data.lastSyncReport.errors[0]}
+              </p>
+            )}
+          </div>
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/github">Gérer <ArrowRight className="ml-1 h-3 w-3" /></Link>
+          </Button>
+        </CardHeader>
+      </Card>
 
       {/* Recent contacts */}
       <Card>

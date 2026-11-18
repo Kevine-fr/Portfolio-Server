@@ -8,6 +8,15 @@ function getTokenFromCookie(): string | null {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
+const AUTH_ROUTES = ['/auth/login'];
+
+/** Indirection so tests can observe the redirect (jsdom cannot navigate). */
+export const navigation = {
+  toLogin() {
+    window.location.href = '/login';
+  },
+};
+
 export const api: AxiosInstance = axios.create({ baseURL: API_URL });
 
 api.interceptors.request.use((config) => {
@@ -19,11 +28,11 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err: AxiosError) => {
-    if (err.response?.status === 401 && typeof window !== 'undefined') {
+    // A failed login also answers 401: it must not trigger the redirect below
+    const isAuthRoute = AUTH_ROUTES.some((r) => err.config?.url?.endsWith(r));
+    if (err.response?.status === 401 && !isAuthRoute && typeof window !== 'undefined') {
       document.cookie = 'portfolio_token=; path=/; max-age=0';
-      if (!window.location.pathname.startsWith('/login')) {
-        window.location.href = '/login';
-      }
+      if (!window.location.pathname.startsWith('/login')) navigation.toLogin();
     }
     return Promise.reject(err);
   },
@@ -32,6 +41,7 @@ api.interceptors.response.use(
 export const apiGet  = <T,>(url: string, params?: any) => api.get<T>(url, { params }).then((r) => r.data);
 export const apiPost = <T,>(url: string, data?: any)   => api.post<T>(url, data).then((r) => r.data);
 export const apiPatch= <T,>(url: string, data?: any)   => api.patch<T>(url, data).then((r) => r.data);
+export const apiPut  = <T,>(url: string, data?: any)   => api.put<T>(url, data).then((r) => r.data);
 export const apiDel  = <T,>(url: string)               => api.delete<T>(url).then((r) => r.data);
 
 // ─── Media upload ──────────────────────────────────────────────────────────
@@ -54,7 +64,7 @@ export async function uploadMedia(
 }
 
 export async function deleteMedia(filename: string): Promise<void> {
-  await api.delete(`/uploads/${filename}`);
+  await api.delete(`/uploads/${encodeURIComponent(filename)}`);
 }
 
 // Resolve a stored path/URL to a fully qualified URL the browser can fetch.
@@ -69,16 +79,23 @@ export function resolveMediaUrl(path?: string | null): string {
 }
 
 // Extract filename from stored path/URL for delete calls
-export function filenameFromUrl(pathOrUrl: string): string | null {
+export function filenameFromUrl(pathOrUrl?: string | null): string | null {
   if (!pathOrUrl) return null;
-  const m = pathOrUrl.match(/\/uploads\/([^/?#]+)$/);
-  return m ? m[1] : null;
+  const m = pathOrUrl.match(/\/uploads\/([^/?#]+)(?:[?#].*)?$/);
+  return m ? decodeURIComponent(m[1]) : null;
 }
 
 // Extracts error message from axios error in French
 export function getErrorMessage(err: any, fallback = 'Une erreur est survenue'): string {
   const msg = err?.response?.data?.message;
   if (Array.isArray(msg)) return msg.join(', ');
-  if (typeof msg === 'string') return msg;
+  if (typeof msg === 'string' && msg) return msg;
+  if (err?.response?.status === 429) return 'Trop de requêtes, réessayez dans une minute.';
+  if (err?.code === 'ERR_NETWORK') return 'Serveur injoignable. Vérifiez votre connexion.';
   return err?.message || fallback;
+}
+
+/** Empty string → null so that PATCH requests can clear optional fields. */
+export function emptyToNull<T>(value: T | '' | undefined | null): T | null {
+  return value === '' || value === undefined || value === null ? null : value;
 }

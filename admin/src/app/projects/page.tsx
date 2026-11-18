@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Plus, Star, Pencil, Trash2, FolderKanban } from 'lucide-react';
+import { Plus, Star, Pencil, Trash2, FolderKanban, Github } from 'lucide-react';
+import Link from 'next/link';
 import { apiGet, apiPost, apiPatch, apiDel, getErrorMessage } from '@/lib/api';
 import { Project } from '@/types';
 import { PageHeader } from '@/components/ui/page-header';
@@ -17,6 +18,7 @@ import {
 } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { ProjectForm } from '@/components/forms/project-form';
+import { SourceBadge } from '@/components/ui/source-badge';
 
 const statusVariant = (s: string): 'default' | 'secondary' | 'outline' | 'success' =>
   s === 'published' ? 'success' : s === 'draft' ? 'secondary' : 'outline';
@@ -56,9 +58,14 @@ export default function ProjectsPage() {
         title="Projets"
         description="Gérez les projets affichés dans votre portfolio."
         actions={
-          <Button onClick={() => setCreating(true)}>
-            <Plus className="h-4 w-4" /> Nouveau projet
-          </Button>
+          <>
+            <Button variant="outline" asChild>
+              <Link href="/github"><Github className="h-4 w-4" /> Importer depuis GitHub</Link>
+            </Button>
+            <Button onClick={() => setCreating(true)}>
+              <Plus className="h-4 w-4" /> Nouveau projet
+            </Button>
+          </>
         }
       />
 
@@ -87,6 +94,7 @@ export default function ProjectsPage() {
                     </div>
                     {p.subtitle && <p className="text-xs text-muted-foreground truncate">{p.subtitle}</p>}
                     <p className="text-xs text-muted-foreground mt-1 font-mono">{p.slug}</p>
+                    <SourceBadge source={p.source} detached={p.github?.autoSync === false} className="mt-1" />
                   </div>
                   <Badge variant={statusVariant(p.status)}>{statusLabel(p.status)}</Badge>
                 </div>
@@ -125,8 +133,16 @@ export default function ProjectsPage() {
                       <div className="flex items-center gap-2">
                         {p.featured && <Star className="h-3.5 w-3.5 fill-yellow-500 text-yellow-500" />}
                         <div>
-                          <p className="font-medium">{p.title}</p>
+                          <p className="flex items-center gap-2 font-medium">
+                            {p.title}
+                            <SourceBadge source={p.source} detached={p.github?.autoSync === false} />
+                          </p>
                           {p.subtitle && <p className="text-xs text-muted-foreground">{p.subtitle}</p>}
+                          {p.github?.htmlUrl && (
+                            <a href={p.github.htmlUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
+                              {p.github.fullName} · ★ {p.github.stars}
+                            </a>
+                          )}
                         </div>
                       </div>
                     </TableCell>
@@ -163,7 +179,7 @@ export default function ProjectsPage() {
           </DialogHeader>
           <ProjectForm
             submitting={createMut.isPending}
-            onSubmit={(p) => createMut.mutateAsync(p)}
+            onSubmit={(p) => createMut.mutateAsync(p).catch(() => undefined)}
             onCancel={() => setCreating(false)}
           />
         </DialogContent>
@@ -180,7 +196,7 @@ export default function ProjectsPage() {
             <ProjectForm
               defaultValues={editing}
               submitting={updateMut.isPending}
-              onSubmit={(p) => updateMut.mutateAsync({ id: editing._id, payload: p })}
+              onSubmit={(p) => updateMut.mutateAsync({ id: editing._id, payload: p }).catch(() => undefined)}
               onCancel={() => setEditing(null)}
             />
           )}

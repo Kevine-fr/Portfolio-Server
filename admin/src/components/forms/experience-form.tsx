@@ -26,6 +26,15 @@ const schema = z.object({
 
 type Values = z.infer<typeof schema>;
 
+export function buildExperiencePayload(raw: Values) {
+  return {
+    ...raw,
+    achievements: raw.achievements ? raw.achievements.split('\n').map((a) => a.trim()).filter(Boolean) : [],
+    // null so that an existing end date is really removed (undefined was dropped)
+    endDate:      raw.current ? null : raw.endDate || null,
+  };
+}
+
 export function ExperienceForm({
   defaultValues, onSubmit, submitting, onCancel,
 }: {
@@ -52,14 +61,7 @@ export function ExperienceForm({
 
   const current = watch('current');
 
-  const internalSubmit = (raw: Values) => {
-    const payload = {
-      ...raw,
-      achievements: raw.achievements ? raw.achievements.split('\n').map((a) => a.trim()).filter(Boolean) : [],
-      endDate:      raw.current ? undefined : raw.endDate || undefined,
-    };
-    return onSubmit(payload);
-  };
+  const internalSubmit = (raw: Values) => onSubmit(buildExperiencePayload(raw));
 
   return (
     <form onSubmit={handleSubmit(internalSubmit)} className="space-y-4">

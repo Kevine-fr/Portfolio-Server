@@ -12,6 +12,7 @@ import { TagsModule } from './modules/tags/tags.module';
 import { ContactsModule } from './modules/contacts/contacts.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { AboutModule } from './modules/about/about.module';
+import { GithubModule } from './modules/github/github.module';
 import { MailModule } from './mail/mail.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
@@ -20,8 +21,9 @@ import {
   PrometheusModule,
   makeHistogramProvider,
 } from '@willsoto/nestjs-prometheus';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { MetricsInterceptor } from './metrics/metrics.interceptor';
+import { MongoExceptionFilter } from './common/mongo-exception.filter';
 
 @Module({
   imports: [
@@ -36,7 +38,11 @@ import { MetricsInterceptor } from './metrics/metrics.interceptor';
       serveStaticOptions: { fallthrough: false, maxAge: '7d' },
     }),
     MongooseModule.forRoot(process.env.MONGO_URI || 'mongodb://localhost:27017/portfolio'),
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
+    // Rate limiting is opt-in per route (@UseGuards(ThrottlerGuard)): login + contact form
+    ThrottlerModule.forRoot({
+      throttlers: [{ ttl: 60_000, limit: 60 }],
+      errorMessage: 'Trop de requêtes, réessayez dans une minute.',
+    }),
     AuthModule,
     UsersModule,
     ProjectsModule,
@@ -47,6 +53,7 @@ import { MetricsInterceptor } from './metrics/metrics.interceptor';
     ContactsModule,
     UploadsModule,
     AboutModule,
+    GithubModule,
     MailModule,
   ],
   controllers: [HealthController],
@@ -57,10 +64,8 @@ import { MetricsInterceptor } from './metrics/metrics.interceptor';
       labelNames: ['method', 'route', 'status_code'],
       buckets: [0.05, 0.1, 0.3, 0.5, 1, 2, 5],
     }),
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: MetricsInterceptor,
-    },
+    { provide: APP_INTERCEPTOR, useClass: MetricsInterceptor },
+    { provide: APP_FILTER, useClass: MongoExceptionFilter },
   ],
 })
 export class AppModule {}

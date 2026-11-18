@@ -23,6 +23,12 @@ const updateSchema = baseSchema.extend({ password: z.string().min(6).optional().
 
 type Values = z.infer<typeof createSchema>;
 
+export function buildUserPayload(raw: Partial<Values>, isEdit: boolean) {
+  const payload: Partial<Values> = { ...raw, email: raw.email?.trim() };
+  if (isEdit && !payload.password) delete payload.password;
+  return payload;
+}
+
 export function UserForm({
   defaultValues, onSubmit, submitting, onCancel, isEdit,
 }: {
@@ -46,11 +52,7 @@ export function UserForm({
   const role = watch('role');
   const isActive = watch('isActive');
 
-  const internalSubmit = (raw: any) => {
-    const payload = { ...raw };
-    if (isEdit && !payload.password) delete payload.password;
-    return onSubmit(payload);
-  };
+  const internalSubmit = (raw: any) => onSubmit(buildUserPayload(raw, !!isEdit));
 
   return (
     <form onSubmit={handleSubmit(internalSubmit)} className="space-y-4">

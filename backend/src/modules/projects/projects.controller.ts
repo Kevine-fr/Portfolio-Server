@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
-import { ProjectsService } from './projects.service';
+import { ProjectQuery, ProjectsService } from './projects.service';
 import { CreateProjectDto, UpdateProjectDto } from './project.dto';
 
 @ApiTags('projects')
@@ -10,7 +10,7 @@ export class ProjectsController {
   constructor(private readonly projects: ProjectsService) {}
 
   // Public read
-  @Get() findAll(@Query() q: any) { return this.projects.findAll(q); }
+  @Get() findAll(@Query() q: ProjectQuery) { return this.projects.findAll(q); }
   @Get('slug/:slug') findBySlug(@Param('slug') slug: string) { return this.projects.findBySlug(slug); }
   @Get(':id') findOne(@Param('id') id: string) { return this.projects.findOne(id); }
 

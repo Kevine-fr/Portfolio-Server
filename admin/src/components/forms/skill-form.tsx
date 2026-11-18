@@ -51,7 +51,8 @@ export function SkillForm({
   const category = watch('category');
   const visible = watch('visible');
 
-  const internalSubmit = (raw: Values) => onSubmit({ ...raw, icon: raw.icon || undefined });
+  // null (not undefined) so that removing the icon is persisted
+  const internalSubmit = (raw: Values) => onSubmit({ ...raw, icon: raw.icon || null });
 
   return (
     <form onSubmit={handleSubmit(internalSubmit)} className="space-y-4">

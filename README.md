@@ -130,6 +130,94 @@ Le champ « Technologies » d'un projet ou d'une expérience est un **multi-sele
 
 ---
 
+## Synchronisation GitHub
+
+Le portfolio peut se remplir **directement depuis votre compte GitHub** : vous travaillez sur vos dépôts comme d'habitude, la synchronisation met à jour projets, compétences, expériences, formations et « À propos ».
+
+### Mise en route (5 minutes)
+
+1. **(Recommandé) Créez un jeton GitHub en lecture seule** : *Settings → Developer settings → Fine-grained tokens*, accès « Public repositories (read-only) ».
+   Sans jeton l'API est limitée à 60 requêtes/heure ; avec un jeton, 5000.
+2. Renseignez les variables du backend (`.env` ou secrets de déploiement) :
+   ```env
+   GITHUB_USERNAME=Kevine-fr     # compte par défaut (modifiable depuis l'admin)
+   GITHUB_TOKEN=github_pat_...   # facultatif mais recommandé — jamais stocké en base
+   ```
+   En production, créez les secrets GitHub Actions `PORTFOLIO_GITHUB_USERNAME` et `PORTFOLIO_GITHUB_TOKEN`
+   (GitHub interdit les noms de secrets commençant par `GITHUB_`) : `deploy.yml` les écrit dans le `.env` du VPS.
+3. Dans l'admin, ouvrez **GitHub** (menu de gauche), vérifiez l'identifiant et cliquez **Synchroniser maintenant**.
+
+### Choisir les dépôts affichés
+
+- **Topic automatique** : ajoutez le topic `portfolio` (configurable) à un dépôt sur GitHub → il apparaît au prochain passage.
+- **Sélection manuelle** : cochez / décochez un dépôt dans la liste de la page GitHub (l'exclusion l'emporte sur le topic).
+- Les forks, dépôts privés et le dépôt de profil sont ignorés par défaut.
+- Un dépôt qui n'est plus sélectionné disparaît du portfolio. Un projet créé à la main puis relié à GitHub (même `repoUrl`)
+  redevient un projet manuel au lieu d'être supprimé.
+
+### Ce qui est récupéré
+
+| Donnée portfolio        | Source GitHub                                                                         |
+|-------------------------|----------------------------------------------------------------------------------------|
+| Titre                   | `.portfolio.yml` › titre `# H1` du README › nom du dépôt (« my-app » → « My App »)       |
+| Description             | `.portfolio.yml` › description du dépôt › premier paragraphe du README                   |
+| Page détaillée          | README (ou le fichier `content:`) rendu en HTML **sanitisé**, liens/images relatifs résolus |
+| Couverture              | `cover:` › image importée dans l'admin › 1ʳᵉ image du README (hors badges) › carte GitHub |
+| Technologies            | `techStack:` › langages principaux (≥ 5 %) + topics reconnus (react, nestjs, docker…)   |
+| Lien « Voir en ligne »  | `liveUrl:` › champ *Website* du dépôt                                                    |
+| Statut / année          | `status:` / `year:` › dépôt archivé → `archived` / année de création                     |
+| Étoiles, langages…      | statistiques du dépôt (affichées sur la page projet)                                      |
+| Compétences             | langages pondérés par volume de code + topics, ou liste explicite du profil              |
+| À propos / expériences / formations | `.portfolio.yml` du dépôt de profil `<identifiant>/<identifiant>`           |
+
+Les champs **sous-titre, galerie, vidéo, mise en avant et ordre** restent modifiables dans l'admin (sauf s'ils sont définis
+dans `.portfolio.yml`). Les contenus saisis manuellement ne sont **jamais** modifiés ni supprimés par la synchronisation.
+Un projet peut être **détaché** (bouton « Synchronisé / Détaché ») pour être édité librement dans l'admin.
+
+### `.portfolio.yml` (facultatif)
+
+À la racine d'un dépôt (`.portfolio.yml`, `.yaml` ou `.json`) :
+
+```yaml
+title: Portfolio 3D
+subtitle: Site personnel immersif
+description: Voyage cosmique en Three.js entre les sections du CV.
+content: docs/PORTFOLIO.md   # page détaillée (README par défaut)
+cover: docs/cover.png        # chemin dans le dépôt ou URL
+gallery: [docs/screen-1.png, docs/screen-2.png]
+techStack: [React, Three.js, Vite]
+liveUrl: https://kevinefray.dev
+featured: true
+order: 1
+status: published            # published | draft | archived
+hidden: false                # true = ne jamais afficher ce dépôt
+```
+
+Dans le dépôt de profil (`Kevine-fr/Kevine-fr`) :
+
+```yaml
+about:
+  tagline: Expériences web immersives…
+  roles: [Développeur Full-Stack, Creative Developer]
+  bio: Passionné par le **design** et la **3D**.
+  cv: docs/cv.pdf
+skills:
+  - { name: React, category: frontend, level: 90 }
+experiences:
+  - { title: Développeur Full-Stack, company: Freelance, startDate: 2024-01, endDate: present, techStack: [React, NestJS] }
+education:
+  - { school: École Supérieure, degree: Master, field: Architecture logicielle, startDate: 2023-09, endDate: 2025-06 }
+```
+
+Les erreurs de syntaxe ou clés inconnues apparaissent dans le **rapport de synchronisation** de la page GitHub.
+
+### Fréquence
+
+La synchronisation automatique tourne par défaut **toutes les heures** (réglable de 15 min à 24 h, ou désactivable).
+Les réponses GitHub inchangées sont mises en cache (ETag) pour économiser le quota.
+
+---
+
 ## API — endpoints publics (consommés par le portfolio)
 
 | Method | Endpoint                  | Description                          |
@@ -140,13 +228,17 @@ Le champ « Technologies » d'un projet ou d'une expérience est un **multi-sele
 | GET    | `/experiences`            | Liste des expériences                |
 | GET    | `/education`              | Liste éducation                      |
 | GET    | `/tags`                   | Liste des étiquettes                 |
+| GET    | `/about`                  | Contenu Hero / À propos              |
+| GET    | `/health`                 | Liveness (utilisé par les healthchecks) |
 | POST   | `/contacts`               | Envoi formulaire (rate-limited 5/min)|
+
+`GET /projects?summary=true` renvoie une liste allégée (sans le contenu long) ; `GET /projects/slug/:slug` renvoie le détail avec `contentHtml` (Markdown/README rendu et sanitisé).
 
 ## API — endpoints protégés (JWT Bearer)
 
 | Method | Endpoint                  |
 |--------|---------------------------|
-| POST   | `/auth/login`             |
+| POST   | `/auth/login` (public, limité à 10 essais/min) |
 | GET    | `/auth/me`                |
 | POST   | `/uploads/image`          |
 | POST   | `/uploads/video`          |
@@ -155,6 +247,10 @@ Le champ « Technologies » d'un projet ou d'une expérience est un **multi-sele
 | GET/PATCH/DELETE  | `/contacts`        |
 | GET    | `/contacts/unread-count`  |
 | Tout   | `/users` (admin uniquement) |
+| GET/PUT | `/github/settings` (PUT : admin) |
+| GET    | `/github/repos`, `/github/status` |
+| PUT    | `/github/repos/:name/selection`, `/github/projects/:id/auto-sync` |
+| POST   | `/github/sync`            |
 
 ---
 
@@ -165,6 +261,19 @@ Ajoute dans `cv-3d/.env.local` :
 ```
 VITE_API_URL=http://localhost:3001/api/v1
 ```
+
+---
+
+## Tests
+
+```bash
+cd backend && npm test          # unitaires + e2e HTTP (store en mémoire, sans MongoDB)
+MONGO_URI_TEST=mongodb://localhost:27017/portfolio_test npm test   # + intégration MongoDB réel
+cd admin && npm test            # Vitest + Testing Library
+```
+
+La CI (`.github/workflows/ci.yml`) lance typecheck, tests (dont l'intégration sur un service `mongo:7`) et builds
+à chaque pull request.
 
 ---
 
@@ -188,6 +297,7 @@ docker compose up -d --build    # rebuild
 - [ ] `CORS_ORIGIN` configuré avec les vrais domaines
 - [ ] MongoDB avec auth si exposé (pas le cas par défaut — interne seulement)
 - [ ] Backups MongoDB et volume `backend_uploads` programmés
+- [ ] `GITHUB_TOKEN` limité à la lecture des dépôts publics (fine-grained token)
 
 ---
 
@@ -234,6 +344,8 @@ Dans **Settings → Secrets and variables → Actions** du repo :
 | `JWT_SECRET` | `openssl rand -hex 64` |
 | `ADMIN_BOOTSTRAP_EMAIL` | `admin@kevinefray.dev` |
 | `ADMIN_BOOTSTRAP_PASSWORD` | mot de passe fort |
+| `PORTFOLIO_GITHUB_USERNAME` | (facultatif) compte GitHub synchronisé, ex. `Kevine-fr` |
+| `PORTFOLIO_GITHUB_TOKEN` | (facultatif, recommandé) jeton GitHub en lecture seule |
 
 ### Repos DockerHub à créer
 

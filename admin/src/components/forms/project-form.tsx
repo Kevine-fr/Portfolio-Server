@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2 } from 'lucide-react';
+import { Github, Loader2 } from 'lucide-react';
 import { Project } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,11 +32,32 @@ const schema = z.object({
   repoUrl:         z.string().url('URL invalide').optional().or(z.literal('')),
   featured:        z.boolean().optional(),
   status:          z.enum(['draft', 'published', 'archived']),
-  year:            z.coerce.number().int().optional(),
+  contentFormat:   z.enum(['text', 'markdown']),
+  // An empty "Année" input used to be coerced to 0
+  year:            z.preprocess(
+    (v) => (v === '' || v === null || v === undefined || Number.isNaN(v) ? undefined : v),
+    z.coerce.number().int().min(1900, 'Année invalide').max(2100, 'Année invalide').optional(),
+  ),
   order:           z.coerce.number().int().optional(),
 });
 
 export type ProjectFormValues = z.infer<typeof schema>;
+
+/**
+ * Form values → API payload. Removed media / links are sent as null: they used
+ * to be sent as undefined, dropped by JSON.stringify, so a cover image, a
+ * video or a URL could never be removed once set.
+ */
+export function buildProjectPayload(raw: ProjectFormValues) {
+  return {
+    ...raw,
+    coverImage: raw.coverImage || null,
+    demoVideo:  raw.demoVideo  || null,
+    liveUrl:    raw.liveUrl    || null,
+    repoUrl:    raw.repoUrl    || null,
+    year:       raw.year ?? null,
+  };
+}
 
 interface Props {
   defaultValues?: Partial<Project>;
@@ -66,25 +87,19 @@ export function ProjectForm({ defaultValues, onSubmit, submitting, onCancel }: P
       repoUrl:         defaultValues?.repoUrl ?? '',
       featured:        defaultValues?.featured ?? false,
       status:          (defaultValues?.status as any) ?? 'draft',
+      contentFormat:   defaultValues?.contentFormat ?? 'text',
       year:            defaultValues?.year ?? new Date().getFullYear(),
       order:           defaultValues?.order ?? 0,
     },
   });
 
   const status   = watch('status');
+  const contentFormat = watch('contentFormat');
+  const synced = defaultValues?.source === 'github' && defaultValues.github?.autoSync !== false;
   const featured = watch('featured');
   const gallery  = watch('gallery');
 
-  const internalSubmit = (raw: ProjectFormValues) => {
-    const payload = {
-      ...raw,
-      coverImage: raw.coverImage || undefined,
-      demoVideo:  raw.demoVideo  || undefined,
-      liveUrl:    raw.liveUrl    || undefined,
-      repoUrl:    raw.repoUrl    || undefined,
-    };
-    return onSubmit(payload);
-  };
+  const internalSubmit = (raw: ProjectFormValues) => onSubmit(buildProjectPayload(raw));
 
   const tabs: { value: Tab; label: string; badge?: string | number }[] = [
     { value: 'general', label: 'Général' },
@@ -95,6 +110,16 @@ export function ProjectForm({ defaultValues, onSubmit, submitting, onCancel }: P
 
   return (
     <form onSubmit={handleSubmit(internalSubmit)} className="space-y-4">
+      {synced && (
+        <div role="note" className="flex gap-3 rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-xs">
+          <Github className="mt-0.5 h-4 w-4 shrink-0" />
+          <p>
+            Synchronisé depuis <strong>{defaultValues?.github?.fullName}</strong> : titre, description, contenu,
+            technologies, liens, statut et année seront écrasés à la prochaine synchronisation. Modifiez plutôt le
+            README ou le <code>.portfolio.yml</code>, ou détachez le projet depuis la page GitHub.
+          </p>
+        </div>
+      )}
       {/* Tabs */}
       <div className="flex gap-1 rounded-md border p-1 overflow-x-auto">
         {tabs.map((t) => (
@@ -146,7 +171,16 @@ export function ProjectForm({ defaultValues, onSubmit, submitting, onCancel }: P
 
       {tab === 'content' && (
         <div className="space-y-4 animate-fade-in">
-          <FormField label="Description complète" hint="Markdown supporté côté portfolio si vous le souhaitez">
+          <FormField label="Format du contenu" hint="Markdown : titres, listes, liens, images, tableaux… (rendu sécurisé)">
+            <Select value={contentFormat} onValueChange={(v) => setValue('contentFormat', v as 'text' | 'markdown')}>
+              <SelectTrigger aria-label="Format du contenu"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="text">Texte simple</SelectItem>
+                <SelectItem value="markdown">Markdown</SelectItem>
+              </SelectContent>
+            </Select>
+          </FormField>
+          <FormField label="Description complète" hint={contentFormat === 'markdown' ? 'Rédigée en Markdown' : 'Les retours à la ligne sont conservés'}>
             <Textarea rows={8} {...register('longDescription')} />
           </FormField>
           <FormField label="Technologies" hint="Sélectionnées parmi vos compétences enregistrées">
@@ -215,7 +249,7 @@ export function ProjectForm({ defaultValues, onSubmit, submitting, onCancel }: P
                 </SelectContent>
               </Select>
             </FormField>
-            <FormField label="Année">
+            <FormField label="Année" error={errors.year?.message as string | undefined}>
               <Input type="number" {...register('year')} />
             </FormField>
             <FormField label="Ordre" hint="Tri croissant">

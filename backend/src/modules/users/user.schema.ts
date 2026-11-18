@@ -22,4 +22,4 @@ export class User {
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
-UserSchema.index({ email: 1 }, { unique: true });
+// (email uniqueness comes from @Prop({ unique: true }) — a second schema.index() was a duplicate)

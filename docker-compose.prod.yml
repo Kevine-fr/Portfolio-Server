@@ -12,6 +12,8 @@
 #   JWT_SECRET
 #   ADMIN_BOOTSTRAP_EMAIL
 #   ADMIN_BOOTSTRAP_PASSWORD
+#   GITHUB_USERNAME            (optionnel — compte GitHub synchronise)
+#   GITHUB_TOKEN               (optionnel — jeton GitHub en lecture seule)
 #
 # Resource caps (shared VPS, 8 vCPU / 24 GB) — see CAPACITY.md in the
 # Infrastructure repo. mem_limit is a safety ceiling, not a reservation;
@@ -103,6 +105,9 @@ services:
       CONTACT_NOTIFY_TO: ${CONTACT_NOTIFY_TO:-}
       # Reutilise pour generer le lien "Ouvrir l'admin" dans les emails
       ADMIN_DOMAIN: ${ADMIN_DOMAIN}
+      # Synchronisation GitHub : compte par defaut + jeton (lecture seule) pour 5000 req/h
+      GITHUB_USERNAME: ${GITHUB_USERNAME:-}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
     volumes:
       - backend_uploads:/app/uploads
     expose:
