@@ -63,6 +63,11 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      # Rendu réel dans Chromium sur le build : aucune page ne doit défiler
+      # horizontalement de 320 à 1440 px (débordements corrigés sur mobile).
+      - run: npx playwright install --with-deps chromium
+      - name: Tests responsive (Playwright)
+        run: npm run test:e2e
 
   # ─── Contrat des scripts de sauvegarde (faux docker, aucun conteneur) ────
   sauvegarde:

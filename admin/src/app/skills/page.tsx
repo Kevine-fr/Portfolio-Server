@@ -79,14 +79,14 @@ export default function SkillsPage() {
                   <Badge variant="secondary">{grouped[cat].length}</Badge>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid gap-2 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {grouped[cat].map((s) => (
-                      <div key={s._id} className="group flex items-center gap-3 rounded-md border bg-card p-3 transition-colors hover:bg-accent/40">
+                      <div key={s._id} className="group flex min-w-0 items-center gap-3 rounded-md border bg-card p-3 transition-colors hover:bg-accent/40">
                         <div className="min-w-0 flex-1 space-y-1.5">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium truncate">{s.name}</span>
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span className="min-w-0 truncate text-sm font-medium" title={s.name}>{s.name}</span>
                             {!s.visible && <EyeOff className="h-3 w-3 text-muted-foreground shrink-0" />}
-                            <SourceBadge source={s.source} className="h-4 px-1" />
+                            <SourceBadge source={s.source} className="h-4 shrink-0 px-1" />
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary">
@@ -95,7 +95,7 @@ export default function SkillsPage() {
                             <span className="text-xs text-muted-foreground tabular-nums w-9 text-right">{s.level}%</span>
                           </div>
                         </div>
-                        <div className="flex gap-1 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+                        <div className="flex shrink-0 gap-1 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
                           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditing(s)}>
                             <Pencil className="h-3 w-3" />
                           </Button>

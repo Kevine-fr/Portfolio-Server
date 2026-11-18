@@ -44,9 +44,9 @@ export function GithubRepoList({ repos, topic, pendingRepo, onToggle, onToggleAu
             <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Rechercher un dépôt, un langage, un topic…" className="pl-8" aria-label="Rechercher un dépôt" />
           </div>
-          <div className="inline-flex gap-1 rounded-md border p-1">
+          <div className="flex shrink-0 gap-1 rounded-md border p-1 sm:inline-flex sm:self-start">
             {FILTERS.map((f) => (
-              <Button key={f.value} type="button" size="sm" variant={filter === f.value ? 'secondary' : 'ghost'} onClick={() => setFilter(f.value)}>
+              <Button key={f.value} type="button" size="sm" className="flex-1 sm:flex-none" variant={filter === f.value ? 'secondary' : 'ghost'} onClick={() => setFilter(f.value)}>
                 {f.label}
               </Button>
             ))}
@@ -71,14 +71,14 @@ export function GithubRepoList({ repos, topic, pendingRepo, onToggle, onToggleAu
                   />
                   <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <a href={repo.htmlUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-medium hover:underline">
+                      <a href={repo.htmlUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-w-0 items-center gap-1 break-all font-medium hover:underline">
                         {repo.name} <ExternalLink className="h-3 w-3 text-muted-foreground" />
                       </a>
                       <Badge variant={included ? 'default' : 'outline'} className="text-[10px]">{inclusionLabel(repo, topic)}</Badge>
                       {repo.fork && <Badge variant="outline" className="gap-1 text-[10px]"><GitFork className="h-3 w-3" /> fork</Badge>}
                       {repo.archived && <Badge variant="outline" className="gap-1 text-[10px]"><Archive className="h-3 w-3" /> archivé</Badge>}
                     </div>
-                    {repo.description && <p className="text-sm text-muted-foreground">{repo.description}</p>}
+                    {repo.description && <p className="break-words text-sm text-muted-foreground">{repo.description}</p>}
                     <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                       {repo.language && <span>{repo.language}</span>}
                       <span className="inline-flex items-center gap-1"><Star className="h-3 w-3" /> {repo.stars}</span>
