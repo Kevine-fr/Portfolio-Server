@@ -108,8 +108,9 @@ export default function GithubPage() {
       ) : settings.isError || !settings.data ? (
         <EmptyState icon={Github} title="Réglages indisponibles" description={getErrorMessage(settings.error)} />
       ) : (
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <div className="space-y-6">
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          {/* min-w-0: long code lines / repo names must not widen the grid on mobile */}
+          <div className="min-w-0 space-y-6">
             <GithubSettingsCard
               settings={settings.data}
               rateLimit={status.data?.rateLimit}
@@ -123,7 +124,7 @@ export default function GithubPage() {
               running={running}
             />
           </div>
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             {!username ? (
               <EmptyState icon={Github} title="Aucun compte connecté" description="Renseignez votre identifiant GitHub pour lister vos dépôts." />
             ) : repos.isLoading ? (

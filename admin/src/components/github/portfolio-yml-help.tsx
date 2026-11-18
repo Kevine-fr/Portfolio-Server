@@ -17,11 +17,11 @@ function CodeBlock({ code, label }: { code: string; label: string }) {
     }
   };
   return (
-    <div className="relative">
+    <div className="relative min-w-0">
       <Button type="button" size="sm" variant="ghost" className="absolute right-2 top-2 h-7 text-xs" onClick={copy} aria-label={`Copier ${label}`}>
         {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />} {copied ? 'Copié' : 'Copier'}
       </Button>
-      <pre className="max-h-96 overflow-auto rounded-md border bg-muted/40 p-4 text-xs leading-relaxed"><code>{code}</code></pre>
+      <pre className="max-h-96 max-w-full overflow-auto rounded-md border bg-muted/40 p-4 pt-10 text-xs leading-relaxed"><code>{code}</code></pre>
     </div>
   );
 }
@@ -38,9 +38,9 @@ export function PortfolioYmlHelp() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="inline-flex gap-1 rounded-md border p-1">
-          <Button type="button" size="sm" variant={tab === 'project' ? 'secondary' : 'ghost'} onClick={() => setTab('project')}>Dans un projet</Button>
-          <Button type="button" size="sm" variant={tab === 'profile' ? 'secondary' : 'ghost'} onClick={() => setTab('profile')}>Dans le dépôt de profil</Button>
+        <div className="flex w-full gap-1 rounded-md border p-1 sm:inline-flex sm:w-auto">
+          <Button type="button" size="sm" className="h-auto min-h-8 flex-1 whitespace-normal py-1.5 sm:flex-none" variant={tab === 'project' ? 'secondary' : 'ghost'} onClick={() => setTab('project')}>Dans un projet</Button>
+          <Button type="button" size="sm" className="h-auto min-h-8 flex-1 whitespace-normal py-1.5 sm:flex-none" variant={tab === 'profile' ? 'secondary' : 'ghost'} onClick={() => setTab('profile')}>Dépôt de profil</Button>
         </div>
         {tab === 'project'
           ? <CodeBlock code={PROJECT_YAML_EXAMPLE} label="l'exemple de projet" />
