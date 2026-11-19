@@ -1,5 +1,7 @@
 # Portfolio Stack — Kevine Fray
 
+API NestJS et interface d'administration Next.js qui alimentent le portfolio : projets synchronisés depuis GitHub (README et `.portfolio.yml`), compétences, expériences et médias.
+
 Stack full pour le portfolio :
 - **Backend NestJS** (API REST, MongoDB, JWT)
 - **Admin Next.js** (shadcn/ui, mode clair/sombre, français, mobile-first)
