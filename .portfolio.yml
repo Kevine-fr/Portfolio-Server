@@ -1,0 +1,14 @@
+# Fiche lue par le portfolio (Portfolio-Server, synchronisation GitHub).
+# Elle prime sur le README : titre, résumé et technologies affichés.
+title: Portfolio — API et administration
+subtitle: Back-office du portfolio
+description: 'API NestJS et interface d''administration Next.js qui alimentent le portfolio : projets
+  synchronisés depuis GitHub (README et .portfolio.yml), compétences, expériences et médias.'
+techStack:
+- TypeScript
+- NestJS
+- Next.js
+- MongoDB
+- Docker
+status: published
+year: 2026
